@@ -3,20 +3,38 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: FitForge Personal Training API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: profile
+    description: User profile
+  - name: plans
+    description: Workout plans
+  - name: days
+    description: Workout days
+  - name: exercises
+    description: Exercise library
+  - name: sessions
+    description: Workout sessions
+  - name: maxes
+    description: Exercise max weights
+  - name: dexa
+    description: DEXA scan data
+  - name: checkins
+    description: AI check-ins
+  - name: dashboard
+    description: Dashboard data
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +42,438 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /profile:
+    get:
+      operationId: getProfile
+      tags: [profile]
+      summary: Get user profile
+      responses:
+        "200":
+          description: Profile found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "404":
+          description: No profile yet
+    post:
+      operationId: saveProfile
+      tags: [profile]
+      summary: Create or update user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfileInput"
+      responses:
+        "200":
+          description: Profile saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /plans/generate:
+    post:
+      operationId: generatePlan
+      tags: [plans]
+      summary: AI-generate a workout plan based on user profile
+      responses:
+        "201":
+          description: Plan generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutPlan"
+
+  /plans:
+    get:
+      operationId: listPlans
+      tags: [plans]
+      summary: List all workout plans
+      responses:
+        "200":
+          description: List of plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkoutPlan"
+
+  /plans/{planId}:
+    get:
+      operationId: getPlan
+      tags: [plans]
+      summary: Get a workout plan with its days
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutPlanDetail"
+        "404":
+          description: Not found
+
+  /plans/active:
+    get:
+      operationId: getActivePlan
+      tags: [plans]
+      summary: Get the currently active workout plan
+      responses:
+        "200":
+          description: Active plan with days
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutPlanDetail"
+        "404":
+          description: No active plan
+
+  /days/{dayId}:
+    get:
+      operationId: getWorkoutDay
+      tags: [days]
+      summary: Get a workout day with all exercises and prescribed sets
+      parameters:
+        - name: dayId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Workout day detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutDayDetail"
+        "404":
+          description: Not found
+
+  /exercises:
+    get:
+      operationId: listExercises
+      tags: [exercises]
+      summary: List exercises, optionally filtered by muscle group
+      parameters:
+        - name: muscleGroup
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Exercise list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Exercise"
+
+  /exercises/{exerciseId}:
+    get:
+      operationId: getExercise
+      tags: [exercises]
+      summary: Get a single exercise
+      parameters:
+        - name: exerciseId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Exercise
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Exercise"
+        "404":
+          description: Not found
+
+  /exercises/{exerciseId}/alternates:
+    get:
+      operationId: getAlternateExercises
+      tags: [exercises]
+      summary: Get alternate exercises for the same muscle group
+      parameters:
+        - name: exerciseId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Alternate exercises
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Exercise"
+
+  /sessions:
+    get:
+      operationId: listSessions
+      tags: [sessions]
+      summary: List workout sessions
+      responses:
+        "200":
+          description: List of sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkoutSession"
+    post:
+      operationId: createSession
+      tags: [sessions]
+      summary: Start a new workout session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutSessionInput"
+      responses:
+        "201":
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSession"
+
+  /sessions/{sessionId}:
+    get:
+      operationId: getSession
+      tags: [sessions]
+      summary: Get a session with logged sets
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Session detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSessionDetail"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateSession
+      tags: [sessions]
+      summary: Update session (mark complete, add notes)
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutSessionUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSession"
+
+  /sessions/{sessionId}/sets:
+    post:
+      operationId: logSet
+      tags: [sessions]
+      summary: Log a completed set during a workout
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoggedSetInput"
+      responses:
+        "201":
+          description: Set logged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoggedSet"
+
+  /exercise-maxes:
+    get:
+      operationId: listExerciseMaxes
+      tags: [maxes]
+      summary: Get all exercise max weights for the user
+      responses:
+        "200":
+          description: Exercise maxes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExerciseMax"
+    post:
+      operationId: upsertExerciseMax
+      tags: [maxes]
+      summary: Log or update a max weight for an exercise
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExerciseMaxInput"
+      responses:
+        "200":
+          description: Max saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExerciseMax"
+
+  /dexa-scans:
+    get:
+      operationId: listDexaScans
+      tags: [dexa]
+      summary: List DEXA scan records
+      responses:
+        "200":
+          description: DEXA scans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DexaScan"
+    post:
+      operationId: createDexaScan
+      tags: [dexa]
+      summary: Add a DEXA scan record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DexaScanInput"
+      responses:
+        "201":
+          description: DEXA scan added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DexaScan"
+
+  /checkins:
+    get:
+      operationId: listCheckins
+      tags: [checkins]
+      summary: List AI check-in records
+      responses:
+        "200":
+          description: Check-ins
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Checkin"
+    post:
+      operationId: createCheckin
+      tags: [checkins]
+      summary: Trigger an AI check-in and get plan recommendations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckinInput"
+      responses:
+        "201":
+          description: Check-in response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Checkin"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Summary data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /progress/weights:
+    get:
+      operationId: getWeightProgress
+      tags: [dashboard]
+      summary: Get weight progression data per exercise
+      parameters:
+        - name: exerciseId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Weight progression data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WeightProgressPoint"
+
+  /recommendations:
+    get:
+      operationId: getRecommendations
+      tags: [dashboard]
+      summary: Get personalized supplement and service recommendations
+      responses:
+        "200":
+          description: Recommendations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Recommendation"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +484,590 @@ components:
       required:
         - status
 
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        age:
+          type: integer
+        gender:
+          type: string
+        weightLbs:
+          type: number
+        heightInches:
+          type: number
+        fitnessGoal:
+          type: string
+          description: "lose_fat, build_muscle, athletic_performance, general_fitness"
+        experienceLevel:
+          type: string
+          description: "beginner, intermediate, advanced"
+        currentActivities:
+          type: string
+          description: JSON array of current activities (e.g. swimming, running)
+        daysPerWeek:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - age
+        - gender
+        - fitnessGoal
+        - experienceLevel
+        - daysPerWeek
+        - createdAt
+
+    UserProfileInput:
+      type: object
+      properties:
+        age:
+          type: integer
+        gender:
+          type: string
+        weightLbs:
+          type: number
+        heightInches:
+          type: number
+        fitnessGoal:
+          type: string
+        experienceLevel:
+          type: string
+        currentActivities:
+          type: string
+        daysPerWeek:
+          type: integer
+      required:
+        - age
+        - gender
+        - fitnessGoal
+        - experienceLevel
+        - daysPerWeek
+
+    WorkoutPlan:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        planType:
+          type: string
+          description: "ppl, full_body, upper_lower"
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+        aiNotes:
+          type: ["string", "null"]
+      required:
+        - id
+        - name
+        - description
+        - planType
+        - isActive
+        - createdAt
+
+    WorkoutPlanDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        planType:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+        aiNotes:
+          type: ["string", "null"]
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkoutDay"
+      required:
+        - id
+        - name
+        - description
+        - planType
+        - isActive
+        - createdAt
+        - days
+
+    WorkoutDay:
+      type: object
+      properties:
+        id:
+          type: integer
+        planId:
+          type: integer
+        dayNumber:
+          type: integer
+        label:
+          type: string
+          description: "Pull (Heavy), Push (Light), Legs, etc."
+        focus:
+          type: string
+          description: "pull, push, legs, full_body, cardio, rest"
+        restSeconds:
+          type: integer
+        notes:
+          type: ["string", "null"]
+      required:
+        - id
+        - planId
+        - dayNumber
+        - label
+        - focus
+        - restSeconds
+
+    WorkoutDayDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        planId:
+          type: integer
+        dayNumber:
+          type: integer
+        label:
+          type: string
+        focus:
+          type: string
+        restSeconds:
+          type: integer
+        notes:
+          type: ["string", "null"]
+        exerciseGroups:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExerciseGroup"
+      required:
+        - id
+        - planId
+        - dayNumber
+        - label
+        - focus
+        - restSeconds
+        - exerciseGroups
+
+    ExerciseGroup:
+      type: object
+      properties:
+        groupName:
+          type: string
+          description: "Lat Movement, Row Movement, etc."
+        pickOne:
+          type: boolean
+          description: "If true, user picks one exercise from the group"
+        exercises:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkoutExercise"
+      required:
+        - groupName
+        - pickOne
+        - exercises
+
+    WorkoutExercise:
+      type: object
+      properties:
+        id:
+          type: integer
+        dayId:
+          type: integer
+        exerciseId:
+          type: integer
+        groupName:
+          type: string
+        pickOne:
+          type: boolean
+        sortOrder:
+          type: integer
+        exercise:
+          $ref: "#/components/schemas/Exercise"
+        prescribedSets:
+          type: array
+          items:
+            $ref: "#/components/schemas/PrescribedSet"
+      required:
+        - id
+        - dayId
+        - exerciseId
+        - groupName
+        - pickOne
+        - sortOrder
+        - exercise
+        - prescribedSets
+
+    Exercise:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        muscleGroup:
+          type: string
+          description: "back, chest, shoulders, biceps, triceps, legs, core, cardio"
+        category:
+          type: string
+          description: "compound, isolation, cardio, bodyweight"
+        equipment:
+          type: ["string", "null"]
+        videoUrl:
+          type: ["string", "null"]
+        instructions:
+          type: ["string", "null"]
+      required:
+        - id
+        - name
+        - muscleGroup
+        - category
+
+    PrescribedSet:
+      type: object
+      properties:
+        id:
+          type: integer
+        workoutExerciseId:
+          type: integer
+        setNumber:
+          type: integer
+        targetWeightLbs:
+          type: ["number", "null"]
+        targetRepsMin:
+          type: integer
+        targetRepsMax:
+          type: integer
+        restSeconds:
+          type: integer
+        notes:
+          type: ["string", "null"]
+      required:
+        - id
+        - workoutExerciseId
+        - setNumber
+        - targetRepsMin
+        - targetRepsMax
+        - restSeconds
+
+    WorkoutSession:
+      type: object
+      properties:
+        id:
+          type: integer
+        dayId:
+          type: integer
+        dayLabel:
+          type: string
+        startedAt:
+          type: string
+        completedAt:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        totalSets:
+          type: integer
+        completedSets:
+          type: integer
+      required:
+        - id
+        - dayId
+        - dayLabel
+        - startedAt
+        - totalSets
+        - completedSets
+
+    WorkoutSessionDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        dayId:
+          type: integer
+        dayLabel:
+          type: string
+        startedAt:
+          type: string
+        completedAt:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        loggedSets:
+          type: array
+          items:
+            $ref: "#/components/schemas/LoggedSet"
+      required:
+        - id
+        - dayId
+        - dayLabel
+        - startedAt
+        - loggedSets
+
+    WorkoutSessionInput:
+      type: object
+      properties:
+        dayId:
+          type: integer
+      required:
+        - dayId
+
+    WorkoutSessionUpdate:
+      type: object
+      properties:
+        completedAt:
+          type: string
+        notes:
+          type: string
+
+    LoggedSet:
+      type: object
+      properties:
+        id:
+          type: integer
+        sessionId:
+          type: integer
+        exerciseId:
+          type: integer
+        exerciseName:
+          type: string
+        setNumber:
+          type: integer
+        actualWeightLbs:
+          type: ["number", "null"]
+        actualReps:
+          type: integer
+        completedAt:
+          type: string
+        isPersonalRecord:
+          type: boolean
+      required:
+        - id
+        - sessionId
+        - exerciseId
+        - exerciseName
+        - setNumber
+        - actualReps
+        - completedAt
+        - isPersonalRecord
+
+    LoggedSetInput:
+      type: object
+      properties:
+        exerciseId:
+          type: integer
+        setNumber:
+          type: integer
+        actualWeightLbs:
+          type: number
+        actualReps:
+          type: integer
+      required:
+        - exerciseId
+        - setNumber
+        - actualReps
+
+    ExerciseMax:
+      type: object
+      properties:
+        id:
+          type: integer
+        exerciseId:
+          type: integer
+        exerciseName:
+          type: string
+        maxWeightLbs:
+          type: number
+        achievedAt:
+          type: string
+        notes:
+          type: ["string", "null"]
+      required:
+        - id
+        - exerciseId
+        - exerciseName
+        - maxWeightLbs
+        - achievedAt
+
+    ExerciseMaxInput:
+      type: object
+      properties:
+        exerciseId:
+          type: integer
+        maxWeightLbs:
+          type: number
+        notes:
+          type: string
+      required:
+        - exerciseId
+        - maxWeightLbs
+
+    DexaScan:
+      type: object
+      properties:
+        id:
+          type: integer
+        scanDate:
+          type: string
+        bodyFatPercent:
+          type: ["number", "null"]
+        leanMassLbs:
+          type: ["number", "null"]
+        fatMassLbs:
+          type: ["number", "null"]
+        boneDensity:
+          type: ["number", "null"]
+        totalWeightLbs:
+          type: ["number", "null"]
+        visceralFatLevel:
+          type: ["number", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - scanDate
+        - createdAt
+
+    DexaScanInput:
+      type: object
+      properties:
+        scanDate:
+          type: string
+        bodyFatPercent:
+          type: number
+        leanMassLbs:
+          type: number
+        fatMassLbs:
+          type: number
+        boneDensity:
+          type: number
+        totalWeightLbs:
+          type: number
+        visceralFatLevel:
+          type: number
+        notes:
+          type: string
+      required:
+        - scanDate
+
+    Checkin:
+      type: object
+      properties:
+        id:
+          type: integer
+        checkinDate:
+          type: string
+        userNotes:
+          type: ["string", "null"]
+        aiResponse:
+          type: string
+        recommendedChanges:
+          type: ["string", "null"]
+        feelingScore:
+          type: ["integer", "null"]
+      required:
+        - id
+        - checkinDate
+        - aiResponse
+
+    CheckinInput:
+      type: object
+      properties:
+        userNotes:
+          type: string
+        feelingScore:
+          type: integer
+          description: "1-10 how the user is feeling"
+      required: []
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalSessions:
+          type: integer
+        sessionsThisWeek:
+          type: integer
+        totalSetsLogged:
+          type: integer
+        currentStreak:
+          type: integer
+        activePlanName:
+          type: ["string", "null"]
+        activePlanDays:
+          type: integer
+        nextWorkoutDay:
+          $ref: "#/components/schemas/WorkoutDay"
+        recentSessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkoutSession"
+        personalRecords:
+          type: integer
+        latestBodyFat:
+          type: ["number", "null"]
+        latestLeanMass:
+          type: ["number", "null"]
+      required:
+        - totalSessions
+        - sessionsThisWeek
+        - totalSetsLogged
+        - currentStreak
+        - activePlanDays
+        - recentSessions
+        - personalRecords
+
+    WeightProgressPoint:
+      type: object
+      properties:
+        exerciseId:
+          type: integer
+        exerciseName:
+          type: string
+        date:
+          type: string
+        weightLbs:
+          type: number
+      required:
+        - exerciseId
+        - exerciseName
+        - date
+        - weightLbs
+
+    Recommendation:
+      type: object
+      properties:
+        id:
+          type: integer
+        category:
+          type: string
+          description: "supplement, service, equipment, food"
+        title:
+          type: string
+        description:
+          type: string
+        brand:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        affiliateUrl:
+          type: ["string", "null"]
+        relevanceReason:
+          type: string
+      required:
+        - id
+        - category
+        - title
+        - description
+        - relevanceReason

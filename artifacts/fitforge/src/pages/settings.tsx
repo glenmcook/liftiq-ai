@@ -1,0 +1,85 @@
+import { useState, useEffect } from "react";
+import { useGetProfile, useSaveProfile } from "@workspace/api-client-react";
+import { Layout } from "@/components/layout";
+import { Save, Loader2, Settings2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+
+export default function Settings() {
+  const { data: profile, isLoading } = useGetProfile();
+  const saveProfile = useSaveProfile();
+  const queryClient = useQueryClient();
+
+  const [formData, setFormData] = useState<any>({});
+
+  useEffect(() => {
+    if (profile) setFormData(profile);
+  }, [profile]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await saveProfile.mutateAsync({ data: formData });
+    queryClient.invalidateQueries({ queryKey: ['/api/profile'] });
+  };
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[50vh] text-primary animate-pulse font-mono tracking-widest">
+          ACCESSING SETTINGS...
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="space-y-10 pb-20 max-w-3xl">
+        <header className="space-y-2">
+          <h1 className="text-5xl font-extrabold tracking-tighter uppercase flex items-center gap-4">
+            <Settings2 className="w-10 h-10 text-primary" /> Parameters
+          </h1>
+          <p className="text-primary font-mono text-sm tracking-widest">SYSTEM CONFIGURATION</p>
+        </header>
+
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="bg-card border border-border p-8 rounded-3xl space-y-6 shadow-xl">
+            <h2 className="text-2xl font-bold uppercase tracking-tight border-b border-border/50 pb-4">Biometrics</h2>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Age</label>
+                <input type="number" value={formData.age || ''} onChange={e => setFormData({...formData, age: Number(e.target.value)})} className="w-full bg-background border border-border rounded-xl px-5 py-4 font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" required />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Weight (Lbs)</label>
+                <input type="number" value={formData.weightLbs || ''} onChange={e => setFormData({...formData, weightLbs: Number(e.target.value)})} className="w-full bg-background border border-border rounded-xl px-5 py-4 font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" required />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-card border border-border p-8 rounded-3xl space-y-6 shadow-xl">
+            <h2 className="text-2xl font-bold uppercase tracking-tight border-b border-border/50 pb-4">Objectives</h2>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Primary Goal</label>
+                <select value={formData.fitnessGoal || ''} onChange={e => setFormData({...formData, fitnessGoal: e.target.value})} className="w-full bg-background border border-border rounded-xl px-5 py-4 font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all appearance-none">
+                  <option value="lose_fat">Incinerate Fat</option>
+                  <option value="build_muscle">Hypertrophy (Build Muscle)</option>
+                  <option value="athletic_performance">Athletic Performance</option>
+                  <option value="general_fitness">General Conditioning</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Days Per Week</label>
+                <input type="number" min="1" max="7" value={formData.daysPerWeek || ''} onChange={e => setFormData({...formData, daysPerWeek: Number(e.target.value)})} className="w-full bg-background border border-border rounded-xl px-5 py-4 font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" required />
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" disabled={saveProfile.isPending} className="w-full bg-primary text-primary-foreground px-8 py-5 rounded-xl font-bold uppercase tracking-widest flex items-center justify-center gap-3 hover:shadow-[0_0_30px_rgba(57,255,20,0.4)] disabled:opacity-50 transition-all text-lg">
+            {saveProfile.isPending ? <Loader2 className="w-6 h-6 animate-spin" /> : <><Save className="w-6 h-6" /> SAVE CONFIGURATION</>}
+          </button>
+        </form>
+      </div>
+    </Layout>
+  );
+}

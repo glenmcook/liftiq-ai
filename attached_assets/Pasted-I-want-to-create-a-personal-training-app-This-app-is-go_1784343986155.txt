@@ -1,0 +1,52 @@
+I want to create a personal training app. This app is going to work with me on my goals and recommend a workout plan based on my age, my gender, my current activity and what I am trying to achieve. For example some users want to build muscle or lose fat. Also It should take into account the things I already do such as I swim 1000 yards everyday and I run 5 miles but I have belly fat, so I want to lose the belly fat. My app should define specific workout days such as Push, Pull and Legs and give specific exercises to do along with the weights I should use for every set , the number of sets and how many reps per set. It should be interactive so while i'm working out it has a timer built in and I can hit the timer to reset between sets. Currently my plan is to rest 2 minutes but we should determine what's best for each plan and exercise. We need to be able to log the highest weight we can do for each exercise in order to design a daily routine of incremental weights. Here's an example i use in notes to track but this should be made into an app. Here’s what ChatGPT gave me: DAY 1 - PULL (HEAVY)
+Lat Movement (pick one)
+Lat Pulldown
+☐ 110 x 8
+☐ 120 x 8
+☐ 130 x 6-8
+OR
+Assisted Pull-Up
+☐ 50 assist x 8
+☐ 40 assist x 8
+☐ 30 assist x 6-8
+
+Row Movement (pick one)
+Seated Cable Row
+☐ 145 x 8
+☐ 160 x 8
+☐ 172 x 6-8
+OR
+Mid Row
+☐ 145 x 8
+☐ 160 x 8
+☐ 170 x 6-8
+
+Dumbbell Row
+☐ 45 x 10
+☐ 50 x 8
+☐ 55 x 6-8
+
+Rear Delt Movement (pick one)
+Face Pull
+☐ 50 x 15
+☐ 55 x 12
+☐ 60 x 10
+OR
+Back Pull Incline
+☐ 95 x 12
+☐ 105 x 10
+☐ 115 x 8
+
+DB Curl
+☐ 45 x 10
+☐ 50 x 8
+☐ 55 x 6-8
+
+Hanging Knee Raises
+☐ 10
+☐ 10
+☐ 12
+
+I want to make sure that each day is visible in the app and each exercise can have some examples. The best examples would be some sort of video demonstration of the exercise. I would also Like to be able to skip an exercise because the equipment is not available and request and alternate exercise for that body part. It should still have recommendations for the weight for each set. We need to ensure there’s a way to track the first round of weights and then each time we do the exercise we should have a way to update if we do more than the specified weight and then recalibrate the workout for subsequent days. We should have a way to update the app with DEXA data so that It can measure one’s progress through data. The app should be connected to an ai model that can continuously change and revise the workouts as necessary. A periodic checkin should be included so that the app is not stale. An advertising component or food, service recommendations would be helpful so we can refer certain supplements, dexa scan vendors or protein powder or drinks. 
+
+I have a few examples of files I use in notes on my iPhone but this is really terrible and hard to use. They were created by ChatGPT and I use them but they need to be incorporated into an app so it’s easier to use. 

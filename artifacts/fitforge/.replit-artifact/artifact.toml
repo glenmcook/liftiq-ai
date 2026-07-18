@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "FitForge - Personal Training"
+version = "1.0.0"
+id = "artifacts/fitforge"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25567
+
+[services.development]
+run = "pnpm --filter @workspace/fitforge run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/fitforge", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/fitforge/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25567"
+BASE_PATH = "/"
