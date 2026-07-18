@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Dumbbell, Home, LineChart, History, Activity, Sparkles, Settings, Star, Flame } from "lucide-react";
+import { Dumbbell, Home, LineChart, History, Activity, Sparkles, Settings, Star, Flame, BookOpen } from "lucide-react";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -11,6 +11,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { href: "/progress", label: "Progress", icon: LineChart },
     { href: "/dexa", label: "DEXA Scans", icon: Activity },
     { href: "/checkin", label: "AI Check-in", icon: Sparkles },
+    { href: "/library", label: "Library", icon: BookOpen },
     { href: "/recommendations", label: "Arsenal", icon: Star },
     { href: "/settings", label: "Settings", icon: Settings },
   ];

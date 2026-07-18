@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useGetSession, useLogSet, useUpdateSession, getGetSessionQueryKey, getGetDashboardSummaryQueryKey, useGetWorkoutDay } from "@workspace/api-client-react";
 import { Timer } from "@/components/timer";
-import { Check, ArrowRight, ArrowLeft, Loader2, Trophy } from "lucide-react";
+import { ExerciseModal } from "@/components/exercise-modal";
+import { Check, ArrowRight, ArrowLeft, Loader2, Trophy, PlayCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 
@@ -72,6 +73,7 @@ export default function ActiveWorkout() {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [restSeconds, setRestSeconds] = useState<number | null>(null);
+  const [howToExercise, setHowToExercise] = useState<any>(null);
 
   if (loadingSession || loadingDay) {
      return <div className="min-h-screen bg-background text-primary flex items-center justify-center font-mono animate-pulse tracking-widest text-xl"><Loader2 className="w-8 h-8 animate-spin mr-3"/> LOADING COMBAT DATA...</div>;
@@ -118,7 +120,15 @@ export default function ActiveWorkout() {
       <main className="flex-1 p-4 md:p-8 space-y-10 overflow-y-auto pb-40">
         <div className="space-y-3 text-center">
           <h2 className="text-4xl font-extrabold uppercase tracking-tighter leading-tight">{exercise.exercise.name}</h2>
-          <div className="text-muted-foreground font-mono text-xs uppercase tracking-widest bg-secondary inline-block px-3 py-1 rounded">{exercise.exercise.muscleGroup}</div>
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <div className="text-muted-foreground font-mono text-xs uppercase tracking-widest bg-secondary inline-block px-3 py-1 rounded">{exercise.exercise.muscleGroup}</div>
+            <button
+              onClick={() => setHowToExercise(exercise.exercise)}
+              className="flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-widest text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1 rounded transition-colors border border-primary/30 hover:border-primary/60"
+            >
+              <PlayCircle className="w-3.5 h-3.5" /> How To
+            </button>
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -160,6 +170,8 @@ export default function ActiveWorkout() {
            NEXT <ArrowRight className="w-5 h-5" />
          </button>
       </footer>
+
+      <ExerciseModal exercise={howToExercise} onClose={() => setHowToExercise(null)} />
     </div>
   );
 }
