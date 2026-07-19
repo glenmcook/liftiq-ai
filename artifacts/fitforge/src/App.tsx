@@ -13,6 +13,8 @@ import Settings from './pages/settings';
 import Recommendations from './pages/recommendations';
 import Library from './pages/library';
 import Diet from './pages/diet';
+import Pricing from './pages/pricing';
+import CheckoutSuccess from './pages/checkout-success';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,6 +41,8 @@ function Router() {
       <Route path="/recommendations" component={Recommendations} />
       <Route path="/library" component={Library} />
       <Route path="/diet" component={Diet} />
+      <Route path="/pricing" component={Pricing} />
+      <Route path="/checkout/success" component={CheckoutSuccess} />
       <Route>
         <div className="min-h-screen bg-background flex flex-col items-center justify-center text-muted-foreground font-mono tracking-widest space-y-4">
           <div className="text-4xl font-extrabold text-primary">404</div>

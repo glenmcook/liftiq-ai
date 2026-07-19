@@ -1,6 +1,9 @@
 import { Link, useLocation } from "wouter";
-import { Dumbbell, Home, LineChart, History, Activity, Sparkles, Settings, Star, BookOpen, Utensils } from "lucide-react";
+import { Dumbbell, Home, LineChart, History, Activity, Sparkles, Settings, Star, BookOpen, Utensils, Crown } from "lucide-react";
 import { LiftIQMark } from "./liftiq-logo";
+import { useQuery } from "@tanstack/react-query";
+
+const BASE = import.meta.env.BASE_URL;
 
 function Wordmark({ size = "md" }: { size?: "sm" | "md" }) {
   return (
@@ -15,6 +18,14 @@ function Wordmark({ size = "md" }: { size?: "sm" | "md" }) {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+
+  const { data: subStatus } = useQuery<{ isActive: boolean }>({
+    queryKey: ["/api/stripe/status"],
+    queryFn: () => fetch(`${BASE}api/stripe/status`).then(r => r.json()),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const isPro = subStatus?.isActive ?? false;
 
   const links = [
     { href: "/", label: "Dashboard", icon: Home },
@@ -50,6 +61,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
+
+        {/* Pro / Upgrade CTA */}
+        {isPro ? (
+          <Link href="/pricing" className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 transition">
+            <Crown className="w-4 h-4 text-primary shrink-0" />
+            <span className="text-xs font-mono font-bold text-primary uppercase tracking-widest">Pro Active</span>
+          </Link>
+        ) : (
+          <Link href="/pricing" className="flex items-center gap-2 px-4 py-3 rounded-lg bg-primary text-black font-bold hover:opacity-90 transition shadow-[0_0_15px_rgba(57,255,20,0.25)]">
+            <Crown className="w-4 h-4 shrink-0" />
+            <span className="text-xs font-mono font-black uppercase tracking-widest">Upgrade to Pro</span>
+          </Link>
+        )}
+
         <div className="text-xs text-muted-foreground font-mono opacity-50">
           SYSTEM v1.0.4<br/>
           ALL SYSTEMS NOMINAL

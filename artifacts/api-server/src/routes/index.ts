@@ -9,6 +9,7 @@ import dexaRouter from "./dexa";
 import checkinsRouter from "./checkins";
 import dashboardRouter from "./dashboard";
 import dietRouter from "./diet";
+import stripeRouter from "./stripe";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(dexaRouter);
 router.use(checkinsRouter);
 router.use(dashboardRouter);
 router.use(dietRouter);
+router.use(stripeRouter);
 
 export default router;

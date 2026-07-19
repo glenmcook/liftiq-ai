@@ -12,6 +12,9 @@ export const userProfilesTable = pgTable("user_profiles", {
   experienceLevel: text("experience_level").notNull(), // beginner, intermediate, advanced
   currentActivities: text("current_activities"), // JSON array
   daysPerWeek: integer("days_per_week").notNull().default(3),
+  email: text("email"),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
