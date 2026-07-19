@@ -34,10 +34,15 @@ export default function Checkin() {
           </div>
           <div className="relative z-10 space-y-8">
             <div className="space-y-4">
-              <label className="font-extrabold uppercase tracking-tight flex justify-between text-xl">
-                <span>Readiness Score</span>
-                <span className="font-mono text-primary bg-primary/10 px-3 py-1 rounded-lg">{feeling} / 10</span>
-              </label>
+              <div>
+                <label className="font-extrabold uppercase tracking-tight flex justify-between text-xl">
+                  <span>Readiness Score</span>
+                  <span className="font-mono text-primary bg-primary/10 px-3 py-1 rounded-lg">{feeling} / 10</span>
+                </label>
+                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                  How ready does your body feel to train today? Consider your sleep quality, muscle soreness, stress levels, and overall energy. A <span className="text-foreground font-medium">1–3</span> means you're beat up and need recovery. <span className="text-foreground font-medium">4–6</span> is average — you can train but won't set records. <span className="text-foreground font-medium">7–10</span> means you're fresh and primed to push hard. Be honest — the AI uses this to decide whether to recommend adjusting your program.
+                </p>
+              </div>
               <input type="range" min="1" max="10" value={feeling} onChange={e => setFeeling(Number(e.target.value))} className="w-full h-3 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary" />
               <div className="flex justify-between text-xs font-mono text-muted-foreground tracking-widest font-bold">
                 <span>DEPLETED</span>
