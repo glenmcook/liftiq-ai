@@ -1,5 +1,17 @@
 import { Link, useLocation } from "wouter";
-import { Dumbbell, Home, LineChart, History, Activity, Sparkles, Settings, Star, Flame, BookOpen } from "lucide-react";
+import { Dumbbell, Home, LineChart, History, Activity, Sparkles, Settings, Star, BookOpen } from "lucide-react";
+import { LiftIQMark } from "./liftiq-logo";
+
+function Wordmark({ size = "md" }: { size?: "sm" | "md" }) {
+  return (
+    <div className={`flex items-center gap-2.5 ${size === "sm" ? "gap-2" : ""}`}>
+      <LiftIQMark className={`text-primary shrink-0 ${size === "sm" ? "w-7 h-7" : "w-9 h-9"}`} />
+      <span className={`font-black tracking-widest uppercase ${size === "sm" ? "text-lg" : "text-xl"}`}>
+        <span className="text-foreground">LIFT</span><span className="text-primary">IQ</span>
+      </span>
+    </div>
+  );
+}
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -20,16 +32,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col md:flex-row">
       {/* Mobile header */}
       <div className="md:hidden flex items-center justify-between p-4 border-b border-border bg-card sticky top-0 z-50">
-        <div className="flex items-center gap-2 text-primary font-bold text-xl tracking-tight">
-          <Flame className="w-6 h-6" /> LIFTIQ
-        </div>
+        <Wordmark size="sm" />
       </div>
 
       {/* Sidebar */}
       <div className="hidden md:flex flex-col w-64 border-r border-border bg-card/30 p-6 space-y-8 sticky top-0 h-screen overflow-y-auto">
-        <div className="flex items-center gap-2 text-primary font-bold text-2xl tracking-tighter">
-          <Flame className="w-8 h-8" /> LIFTIQ
-        </div>
+        <Wordmark />
         <nav className="flex-1 space-y-2">
           {links.map((link) => {
             const active = location === link.href || (link.href !== "/" && location.startsWith(link.href));
