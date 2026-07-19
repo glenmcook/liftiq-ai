@@ -71,11 +71,11 @@ export function WorkoutSummaryModal({ dayLabel, startedAt, completedAt, loggedSe
   const duration = formatDuration(startedAt, completedAt);
 
   // Group by exercise
-  const byExercise: Record<string, { sets: number; volume: number; pr: boolean }> = {};
+  const byExercise: Record<string, { sets: number; maxWeight: number; pr: boolean }> = {};
   for (const s of loggedSets) {
-    if (!byExercise[s.exerciseName]) byExercise[s.exerciseName] = { sets: 0, volume: 0, pr: false };
+    if (!byExercise[s.exerciseName]) byExercise[s.exerciseName] = { sets: 0, maxWeight: 0, pr: false };
     byExercise[s.exerciseName].sets++;
-    byExercise[s.exerciseName].volume += (s.actualWeightLbs ?? 0) * s.actualReps;
+    byExercise[s.exerciseName].maxWeight = Math.max(byExercise[s.exerciseName].maxWeight, s.actualWeightLbs ?? 0);
     if (s.isPersonalRecord) byExercise[s.exerciseName].pr = true;
   }
 
@@ -215,7 +215,7 @@ export function WorkoutSummaryModal({ dayLabel, startedAt, completedAt, loggedSe
                   </div>
                   <div style={{ display: "flex", gap: 12 }}>
                     <span style={{ color: "#555", fontSize: 11 }}>{data.sets} sets</span>
-                    {data.volume > 0 && <span style={{ color: "#444", fontSize: 11 }}>{Math.round(data.volume).toLocaleString()} lbs</span>}
+                    {data.maxWeight > 0 && <span style={{ color: "#444", fontSize: 11 }}>{data.maxWeight.toLocaleString()} lbs</span>}
                   </div>
                 </div>
               ))}
