@@ -61,7 +61,7 @@ export default function SessionHistory() {
     <Layout>
       <div className="space-y-8 pb-20">
         <header className="space-y-2">
-          <h1 className="text-5xl font-extrabold tracking-tighter uppercase">Combat Log</h1>
+          <h1 className="text-5xl font-extrabold tracking-tighter uppercase [word-spacing:0.2em]">Combat Log</h1>
           <p className="text-primary font-mono text-sm tracking-widest">ARCHIVED SESSION DATA</p>
         </header>
 
