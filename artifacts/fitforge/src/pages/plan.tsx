@@ -1,10 +1,22 @@
-import { useGetActivePlan } from "@workspace/api-client-react";
+import { useGetActivePlan, useGeneratePlan, getGetActivePlanQueryKey } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { Layout } from "@/components/layout";
-import { ArrowRight, Activity, Clock, ShieldAlert } from "lucide-react";
+import { ArrowRight, Activity, Clock, ShieldAlert, RefreshCw, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Plan() {
   const { data: plan, isLoading } = useGetActivePlan();
+  const generatePlan = useGeneratePlan();
+  const queryClient = useQueryClient();
+  const [confirming, setConfirming] = useState(false);
+
+  const handleRegenerate = async () => {
+    if (!confirming) { setConfirming(true); return; }
+    setConfirming(false);
+    await generatePlan.mutateAsync({});
+    queryClient.invalidateQueries({ queryKey: getGetActivePlanQueryKey() });
+  };
 
   if (isLoading) {
     return (
@@ -35,9 +47,34 @@ export default function Plan() {
     <Layout>
       <div className="space-y-12 pb-20">
         <header className="space-y-6">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-full text-xs font-mono font-bold uppercase tracking-widest">
-            <Activity className="w-4 h-4" /> Active Protocol
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-full text-xs font-mono font-bold uppercase tracking-widest">
+              <Activity className="w-4 h-4" /> Active Protocol
+            </div>
+            <div className="flex items-center gap-3">
+              {confirming && (
+                <span className="text-xs font-mono text-muted-foreground">
+                  This will replace your current plan.
+                </span>
+              )}
+              <button
+                onClick={handleRegenerate}
+                disabled={generatePlan.isPending}
+                onBlur={() => setConfirming(false)}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-mono text-xs font-bold uppercase tracking-widest border transition-all ${
+                  confirming
+                    ? "bg-primary text-black border-primary shadow-[0_0_15px_rgba(57,255,20,0.4)]"
+                    : "bg-card border-border text-muted-foreground hover:border-primary/50 hover:text-primary"
+                }`}
+              >
+                {generatePlan.isPending
+                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating...</>
+                  : <><RefreshCw className="w-3.5 h-3.5" /> {confirming ? "Confirm Regenerate" : "Regenerate Plan"}</>
+                }
+              </button>
+            </div>
           </div>
+
           <h1 className="text-5xl font-extrabold tracking-tighter uppercase">{plan.name}</h1>
           <p className="text-muted-foreground text-lg max-w-3xl leading-relaxed">{plan.description}</p>
           {plan.aiNotes && (
