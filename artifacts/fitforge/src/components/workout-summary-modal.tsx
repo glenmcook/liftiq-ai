@@ -66,7 +66,7 @@ export function WorkoutSummaryModal({ dayLabel, startedAt, completedAt, loggedSe
 
   // Computed stats
   const totalSets = loggedSets.length;
-  const totalVolume = loggedSets.reduce((acc, s) => acc + (s.actualWeightLbs ?? 0) * s.actualReps, 0);
+  const maxWeight = Math.max(0, ...loggedSets.map((s) => s.actualWeightLbs ?? 0));
   const prs = loggedSets.filter((s) => s.isPersonalRecord).length;
   const duration = formatDuration(startedAt, completedAt);
 
@@ -83,7 +83,7 @@ export function WorkoutSummaryModal({ dayLabel, startedAt, completedAt, loggedSe
   const primaryColor = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim();
   const accentCss = `hsl(${primaryColor})`;
 
-  const shareText = `💪 Just crushed ${dayLabel} on LiftIQ!\n⏱ ${duration} · 📦 ${totalSets} sets · 🔥 ${Math.round(totalVolume).toLocaleString()} lbs volume${prs > 0 ? ` · 🏆 ${prs} PR${prs > 1 ? "s" : ""}` : ""}\n\nTrack yours → liftiq.app`;
+  const shareText = `💪 Just crushed ${dayLabel} on LiftIQ!\n⏱ ${duration} · 📦 ${totalSets} sets · 🏋️ ${maxWeight.toLocaleString()} lbs top set${prs > 0 ? ` · 🏆 ${prs} PR${prs > 1 ? "s" : ""}` : ""}\n\nTrack yours → liftiq.app`;
 
   // Generate image once and cache it
   const getImage = useCallback(async (): Promise<string | null> => {
@@ -192,7 +192,7 @@ export function WorkoutSummaryModal({ dayLabel, startedAt, completedAt, loggedSe
             {[
               { icon: "⏱", label: "TIME", value: duration },
               { icon: "📦", label: "SETS", value: totalSets },
-              { icon: "🔥", label: "VOLUME", value: `${(totalVolume / 1000).toFixed(1)}k lbs` },
+              { icon: "🏋️", label: "TOP SET", value: `${maxWeight.toLocaleString()} lbs` },
               { icon: "🏆", label: "PRs", value: prs },
             ].map((stat, i) => (
               <div key={stat.label} style={{ padding: "14px 10px", textAlign: "center", borderRight: i < 3 ? "1px solid #1a1a1a" : undefined }}>
