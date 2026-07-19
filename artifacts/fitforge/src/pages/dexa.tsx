@@ -1,8 +1,9 @@
 import { useState, useRef } from "react";
 import { useListDexaScans, useCreateDexaScan, getListDexaScansQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
-import { Plus, Activity, Loader2, Upload, FileText, X, CheckCircle, ChevronDown, ChevronUp, ShieldCheck } from "lucide-react";
+import { Plus, Activity, Loader2, Upload, FileText, X, CheckCircle, ChevronDown, ChevronUp, ShieldCheck, MapPin, ArrowRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 
 type ParsedDexa = {
   scanDate: string;
@@ -118,6 +119,8 @@ export default function Dexa() {
     closeForm();
   };
 
+  const [, navigate] = useLocation();
+
   return (
     <Layout>
       <div className="space-y-10 pb-20">
@@ -141,6 +144,25 @@ export default function Dexa() {
             </div>
           )}
         </header>
+
+        {/* Get a DEXA callout */}
+        <button
+          onClick={() => navigate("/recommendations#dexa")}
+          className="w-full flex items-center justify-between gap-4 bg-card border border-border hover:border-primary/50 hover:shadow-[0_0_20px_rgba(57,255,20,0.08)] rounded-2xl px-6 py-5 transition-all group text-left"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0">
+              <MapPin className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <div className="font-extrabold uppercase tracking-wide text-sm text-foreground">Don't have a DEXA scan yet?</div>
+              <div className="text-xs text-muted-foreground font-mono mt-0.5">Find a scanning location near you → DexaFit · BodySpec · Kalos</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 text-primary font-mono text-xs font-bold uppercase tracking-widest shrink-0">
+            Get a DEXA <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </div>
+        </button>
 
         {/* UPLOAD MODE */}
         {mode === "upload" && (
