@@ -11,15 +11,20 @@ function SetRow({ prescribedSet, exercise, session, sessionId, onSetCompleted, l
   const logged = session?.loggedSets?.find((s: any) => s.exerciseId === exercise.exerciseId && s.setNumber === prescribedSet.setNumber);
   const [reps, setReps] = useState(logged?.actualReps || prescribedSet.targetRepsMax);
   const [weight, setWeight] = useState(logged?.actualWeightLbs || prescribedSet.targetWeightLbs || 0);
+  // Local flag flips immediately on success so the button turns green without waiting for refetch
+  const [done, setDone] = useState(false);
   const queryClient = useQueryClient();
 
+  const isCompleted = done || !!logged;
+
   const handleLog = async () => {
-    if (logged) return;
+    if (isCompleted || logSet.isPending) return;
     await logSet.mutateAsync(
       { sessionId, data: { exerciseId: exercise.exerciseId, setNumber: prescribedSet.setNumber, actualReps: reps, actualWeightLbs: weight } },
       {
          onSuccess: () => {
-           queryClient.invalidateQueries({ queryKey: getGetSessionQueryKey(session.id) });
+           setDone(true);
+           queryClient.invalidateQueries({ queryKey: ['session', session.id] });
            if (prescribedSet.restSeconds > 0) {
              onSetCompleted(prescribedSet.restSeconds);
            }
@@ -29,29 +34,38 @@ function SetRow({ prescribedSet, exercise, session, sessionId, onSetCompleted, l
   };
 
   return (
-    <div className={cn("grid grid-cols-[1fr_2fr_2fr_1fr] gap-4 items-center p-5 rounded-2xl border transition-all duration-300", logged ? "bg-primary/10 border-primary/50 shadow-[inset_0_0_20px_rgba(57,255,20,0.05)]" : "bg-card border-border")}>
-      <div className="font-mono text-muted-foreground font-bold text-sm tracking-widest">SET {prescribedSet.setNumber}</div>
+    <div className={cn("grid grid-cols-[1fr_2fr_2fr_1fr] gap-4 items-center p-5 rounded-2xl border transition-all duration-300", isCompleted ? "bg-primary/10 border-primary/50 shadow-[inset_0_0_20px_rgba(57,255,20,0.08)]" : "bg-card border-border")}>
+      <div className={cn("font-mono font-bold text-sm tracking-widest", isCompleted ? "text-primary" : "text-muted-foreground")}>SET {prescribedSet.setNumber}</div>
       <div className="flex flex-col items-center">
         <div className="flex items-center gap-1">
-          <input type="number" value={weight} onChange={e => setWeight(Number(e.target.value))} className="w-20 bg-background border border-border rounded-lg text-foreground font-mono font-bold text-center py-3 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" disabled={!!logged} />
+          <input type="number" value={weight} onChange={e => setWeight(Number(e.target.value))} className={cn("w-20 border rounded-lg font-mono font-bold text-center py-3 outline-none transition-colors", isCompleted ? "bg-primary/10 border-primary/40 text-primary" : "bg-background border-border text-foreground focus:border-primary focus:ring-1 focus:ring-primary")} disabled={isCompleted} />
           <span className="text-xs text-muted-foreground font-mono tracking-widest ml-1">LBS</span>
         </div>
         {prescribedSet.targetWeightLbs && <div className="text-[10px] text-muted-foreground font-mono mt-2 tracking-widest bg-secondary px-2 py-0.5 rounded">TARGET: {prescribedSet.targetWeightLbs}</div>}
       </div>
       <div className="flex flex-col items-center">
         <div className="flex items-center gap-1">
-          <input type="number" value={reps} onChange={e => setReps(Number(e.target.value))} className="w-20 bg-background border border-border rounded-lg text-foreground font-mono font-bold text-center py-3 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" disabled={!!logged} />
+          <input type="number" value={reps} onChange={e => setReps(Number(e.target.value))} className={cn("w-20 border rounded-lg font-mono font-bold text-center py-3 outline-none transition-colors", isCompleted ? "bg-primary/10 border-primary/40 text-primary" : "bg-background border-border text-foreground focus:border-primary focus:ring-1 focus:ring-primary")} disabled={isCompleted} />
           <span className="text-xs text-muted-foreground font-mono tracking-widest ml-1">REPS</span>
         </div>
         <div className="text-[10px] text-muted-foreground font-mono mt-2 tracking-widest bg-secondary px-2 py-0.5 rounded">TARGET: {prescribedSet.targetRepsMin}-{prescribedSet.targetRepsMax}</div>
       </div>
       <div className="flex justify-end">
-        <button onClick={handleLog} disabled={!!logged || logSet.isPending} className={cn("w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300", logged ? "bg-primary text-primary-foreground shadow-[0_0_20px_rgba(57,255,20,0.5)] scale-110" : "bg-secondary text-muted-foreground hover:bg-primary/20 hover:text-primary hover:scale-105")}>
-          {logSet.isPending ? <Loader2 className="w-6 h-6 animate-spin" /> : <Check className="w-7 h-7" />}
+        <button
+          onClick={handleLog}
+          disabled={isCompleted || logSet.isPending}
+          className={cn(
+            "w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300",
+            isCompleted
+              ? "bg-primary text-black shadow-[0_0_24px_rgba(57,255,20,0.7)] scale-110 cursor-default"
+              : "bg-secondary border-2 border-border text-muted-foreground hover:border-primary hover:text-primary hover:scale-105"
+          )}
+        >
+          {logSet.isPending ? <Loader2 className="w-6 h-6 animate-spin" /> : <Check className={cn("w-7 h-7 transition-all", isCompleted ? "stroke-[3]" : "stroke-2")} />}
         </button>
       </div>
-      {logged?.isPersonalRecord && (
-        <div className="col-span-4 mt-3 flex items-center justify-center gap-2 text-xs font-mono font-bold text-background bg-primary py-2 rounded-lg tracking-widest">
+      {(logged?.isPersonalRecord) && (
+        <div className="col-span-4 mt-3 flex items-center justify-center gap-2 text-xs font-mono font-bold text-black bg-primary py-2 rounded-lg tracking-widest">
           <Trophy className="w-4 h-4" /> PERSONAL RECORD
         </div>
       )}
