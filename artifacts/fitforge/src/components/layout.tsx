@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Dumbbell, Home, LineChart, History, Activity, Sparkles, Settings, Star, BookOpen } from "lucide-react";
+import { Dumbbell, Home, LineChart, History, Activity, Sparkles, Settings, Star, BookOpen, Utensils } from "lucide-react";
 import { LiftIQMark } from "./liftiq-logo";
 
 function Wordmark({ size = "md" }: { size?: "sm" | "md" }) {
@@ -23,6 +23,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { href: "/progress", label: "Progress", icon: LineChart },
     { href: "/dexa", label: "DEXA Scans", icon: Activity },
     { href: "/checkin", label: "AI Check-in", icon: Sparkles },
+    { href: "/diet", label: "Diet", icon: Utensils },
     { href: "/library", label: "Library", icon: BookOpen },
     { href: "/recommendations", label: "Arsenal", icon: Star },
     { href: "/settings", label: "Settings", icon: Settings },

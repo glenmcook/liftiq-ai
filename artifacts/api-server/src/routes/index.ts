@@ -8,6 +8,7 @@ import maxesRouter from "./maxes";
 import dexaRouter from "./dexa";
 import checkinsRouter from "./checkins";
 import dashboardRouter from "./dashboard";
+import dietRouter from "./diet";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(maxesRouter);
 router.use(dexaRouter);
 router.use(checkinsRouter);
 router.use(dashboardRouter);
+router.use(dietRouter);
 
 export default router;

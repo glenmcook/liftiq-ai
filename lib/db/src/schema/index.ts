@@ -10,3 +10,5 @@ export * from "./exerciseMaxes";
 export * from "./dexaScans";
 export * from "./checkins";
 export * from "./recommendations";
+export * from "./dietProfiles";
+export * from "./dietRecommendations";
