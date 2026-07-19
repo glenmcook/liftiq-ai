@@ -39,6 +39,30 @@ const DEXA_PROVIDERS = [
     bg: "bg-purple-500/5",
     dot: "bg-purple-400",
   },
+  {
+    name: "Fitnescity",
+    tagline: "Book Any Lab Near You",
+    description:
+      "Marketplace that aggregates DEXA scan slots at hospitals, universities, and performance labs nationwide. Best way to find a certified provider in your zip code.",
+    url: "https://www.fitnescity.com",
+    highlights: ["Lab aggregator", "Hospital-grade", "Zip code search", "RMR & VO2 too"],
+    accent: "text-orange-400",
+    border: "border-orange-500/30",
+    bg: "bg-orange-500/5",
+    dot: "bg-orange-400",
+  },
+  {
+    name: "Life Time",
+    tagline: "In-Gym Scanning",
+    description:
+      "Many Life Time Athletic clubs offer DEXA scans on-site through their Performance services. Convenient if you're already a member — no extra travel required.",
+    url: "https://www.lifetime.life/life-time-offerings/health-services/dexa-scan.html",
+    highlights: ["Member perk", "On-site clinics", "Paired coaching", "Multiple cities"],
+    accent: "text-red-400",
+    border: "border-red-500/30",
+    bg: "bg-red-500/5",
+    dot: "bg-red-400",
+  },
 ];
 
 export default function Recommendations() {
