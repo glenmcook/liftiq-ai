@@ -24,7 +24,7 @@ export default function Checkin() {
     <Layout>
       <div className="space-y-12 pb-20">
         <header className="space-y-2">
-          <h1 className="text-5xl font-extrabold tracking-tighter uppercase">AI Check-in</h1>
+          <h1 className="text-4xl font-extrabold tracking-widest uppercase">AI Check-in</h1>
           <p className="text-primary font-mono text-sm tracking-widest">SYSTEM FEEDBACK & ADJUSTMENTS</p>
         </header>
 
