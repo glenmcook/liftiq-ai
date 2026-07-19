@@ -56,15 +56,22 @@ router.post("/dexa-scans/parse", upload.single("file"), async (req, res): Promis
     return;
   }
 
-  const systemPrompt = `You are a DEXA scan report parser. Extract body composition data from the provided document and return ONLY a JSON object with these exact keys:
-- scanDate: string (YYYY-MM-DD format, use today's date if not found)
-- bodyFatPercent: number or null (body fat percentage, e.g. 18.5)
-- leanMassLbs: number or null (lean/muscle mass in pounds)
-- fatMassLbs: number or null (fat mass in pounds)
+  const systemPrompt = `You are a DEXA scan report parser focused exclusively on body composition metrics.
+
+PRIVACY RULES — STRICT:
+- Do NOT extract, mention, or include any personally identifiable information (PII).
+- Ignored fields (never include): patient name, date of birth, age, sex/gender, patient ID, medical record number, referring physician, facility name, address, insurance info, or any other identifying data.
+- The notes field must contain ONLY clinical body composition observations — no names, no IDs, no demographics.
+
+Extract ONLY the following body composition metrics and return a JSON object with these exact keys:
+- scanDate: string (YYYY-MM-DD format, use today's date if not found — do NOT use the patient's date of birth)
+- bodyFatPercent: number or null (total body fat percentage)
+- leanMassLbs: number or null (total lean/muscle mass in pounds)
+- fatMassLbs: number or null (total fat mass in pounds)
 - boneDensity: number or null (bone mineral density in g/cm²)
 - totalWeightLbs: number or null (total body weight in pounds)
 - visceralFatLevel: number or null (visceral fat area or level, numeric value only)
-- notes: string or null (brief summary of notable findings, T-scores, Z-scores, or regional breakdown if present)
+- notes: string or null (ONLY: T-scores, Z-scores, regional lean/fat breakdown percentages, body score, ALMI, FFMI — no PII)
 
 Return ONLY valid JSON, no markdown, no explanation.`;
 
