@@ -21,14 +21,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* Mobile header */}
       <div className="md:hidden flex items-center justify-between p-4 border-b border-border bg-card sticky top-0 z-50">
         <div className="flex items-center gap-2 text-primary font-bold text-xl tracking-tight">
-          <Flame className="w-6 h-6" /> FITFORGE
+          <Flame className="w-6 h-6" /> LIFTIQ
         </div>
       </div>
 
       {/* Sidebar */}
       <div className="hidden md:flex flex-col w-64 border-r border-border bg-card/30 p-6 space-y-8 sticky top-0 h-screen overflow-y-auto">
         <div className="flex items-center gap-2 text-primary font-bold text-2xl tracking-tighter">
-          <Flame className="w-8 h-8" /> FITFORGE
+          <Flame className="w-8 h-8" /> LIFTIQ
         </div>
         <nav className="flex-1 space-y-2">
           {links.map((link) => {
