@@ -24,7 +24,7 @@ export default function CheckoutSuccess() {
         </h1>
         <p className="text-primary font-mono text-sm tracking-widest">PROTOCOL UNLOCKED</p>
         <p className="text-muted-foreground text-sm max-w-sm leading-relaxed mt-2">
-          Your LiftIQ Pro subscription is active. All AI features are now unlocked — build your plan, fuel your training, and track everything.
+          Your 14-day free trial has started. All AI features are unlocked — build your plan, fuel your training, and track everything. No charge until your trial ends.
         </p>
       </div>
 

@@ -145,6 +145,7 @@ export default function Pricing() {
               <div className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-2">Free</div>
               <div className="text-4xl font-black text-foreground">$0</div>
               <div className="text-sm text-muted-foreground mt-1">No credit card required</div>
+              <div className="text-xs text-muted-foreground mt-0.5 font-mono">Free forever</div>
             </div>
             <ul className="space-y-3 flex-1">
               {FREE_FEATURES.map(f => (
@@ -171,11 +172,17 @@ export default function Pricing() {
                 <div className="h-10 w-24 bg-border animate-pulse rounded" />
               ) : proPrice ? (
                 <>
-                  <div className="text-4xl font-black text-foreground">
-                    {formatPrice(proPrice.unitAmount, proPrice.recurring?.interval ?? "month")}
+                  <div className="flex items-end gap-2">
+                    <div className="text-4xl font-black text-foreground">
+                      {formatPrice(proPrice.unitAmount, proPrice.recurring?.interval ?? "month")}
+                    </div>
+                    <div className="text-sm text-muted-foreground pb-1.5">after trial</div>
+                  </div>
+                  <div className="mt-1.5 inline-flex items-center gap-1.5 bg-primary/10 border border-primary/30 rounded-full px-3 py-1">
+                    <span className="text-primary text-xs font-black font-mono uppercase tracking-wider">14-day free trial</span>
                   </div>
                   {selectedInterval === "year" && (
-                    <div className="text-xs text-primary font-mono mt-1">
+                    <div className="text-xs text-primary font-mono mt-1.5">
                       ${((proPrice.unitAmount / 100) / 12).toFixed(2)}/mo billed annually
                     </div>
                   )}
@@ -210,9 +217,12 @@ export default function Pricing() {
                   {checkout.isPending ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <><Zap className="w-4 h-4" /> Upgrade to Pro</>
+                    <><Zap className="w-4 h-4" /> Start Free Trial</>
                   )}
                 </button>
+                <p className="text-center text-xs text-muted-foreground font-mono">
+                  No charge for 14 days · Cancel anytime
+                </p>
                 {checkout.isError && (
                   <p className="text-xs text-red-400 text-center font-mono">{(checkout.error as any)?.message}</p>
                 )}
