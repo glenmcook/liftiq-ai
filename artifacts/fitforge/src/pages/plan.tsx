@@ -75,7 +75,7 @@ export default function Plan() {
             </div>
           </div>
 
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight uppercase leading-snug">{plan.name}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-widest uppercase leading-normal">{plan.name}</h1>
           <p className="text-muted-foreground text-lg max-w-3xl leading-relaxed">{plan.description}</p>
           {plan.aiNotes && (
             <div className="bg-card/50 border border-primary/30 p-6 rounded-2xl font-mono text-sm text-foreground italic border-l-4 border-l-primary relative overflow-hidden">
