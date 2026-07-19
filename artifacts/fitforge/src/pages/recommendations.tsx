@@ -2,6 +2,24 @@ import { useGetRecommendations } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { ExternalLink, Star, MapPin } from "lucide-react";
 
+// ─── DEXA Provider affiliate links ───────────────────────────────────────────
+// `url`          — canonical website shown to users
+// `affiliateUrl` — your affiliate/referral tracking URL (replace when approved)
+//                  Leave undefined to fall back to `url` with UTM params.
+//
+// How to get affiliate deals:
+//   DexaFit   → email partners@dexafit.com or check dexafit.com/partners
+//   BodySpec  → contact via bodyspec.com (small team, negotiate directly)
+//   Kalos     → contact via getkalos.com
+//   Fitnescity → check fitnescity.com for affiliate/partner program
+//   Life Time  → search "Life Time affiliate" on Impact.com or CJ Affiliate
+//
+// Quick tracking without a formal deal: the links below already append
+// ?utm_source=liftiq&utm_medium=referral so clicks show up in their analytics,
+// making it easy to demonstrate value when you pitch for a commission deal.
+
+const UTM = "?utm_source=liftiq&utm_medium=referral&utm_campaign=dexa_providers";
+
 const DEXA_PROVIDERS = [
   {
     name: "DexaFit",
@@ -9,6 +27,7 @@ const DEXA_PROVIDERS = [
     description:
       "The largest DEXA scanning network in the US. Over 100 locations across 40+ cities. Full body composition reports with VO2 Max and RMR testing available.",
     url: "https://www.dexafit.com",
+    affiliateUrl: undefined, // ← replace with your DexaFit affiliate link when approved
     highlights: ["100+ locations", "VO2 Max add-on", "RMR testing", "Digital report"],
     accent: "text-blue-400",
     border: "border-blue-500/30",
@@ -21,6 +40,7 @@ const DEXA_PROVIDERS = [
     description:
       "High-accuracy DEXA scans at one of the lowest price points available. Mobile trucks come to your city on a rotating schedule — no clinic visit needed.",
     url: "https://www.bodyspec.com",
+    affiliateUrl: undefined, // ← replace with your BodySpec referral link when approved
     highlights: ["~$45/scan", "Mobile trucks", "App-based tracking", "No appointment wait"],
     accent: "text-primary",
     border: "border-primary/30",
@@ -33,6 +53,7 @@ const DEXA_PROVIDERS = [
     description:
       "Clinic-grade DEXA scanning with in-depth analysis and one-on-one consultations. Focuses on athletes and body recomposition with detailed regional breakdowns.",
     url: "https://www.getkalos.com",
+    affiliateUrl: undefined, // ← replace with your Kalos referral link when approved
     highlights: ["Regional breakdown", "Athlete focus", "Consultation included", "Trend tracking"],
     accent: "text-purple-400",
     border: "border-purple-500/30",
@@ -45,6 +66,7 @@ const DEXA_PROVIDERS = [
     description:
       "Marketplace that aggregates DEXA scan slots at hospitals, universities, and performance labs nationwide. Best way to find a certified provider in your zip code.",
     url: "https://www.fitnescity.com",
+    affiliateUrl: undefined, // ← replace with your Fitnescity affiliate link when approved
     highlights: ["Lab aggregator", "Hospital-grade", "Zip code search", "RMR & VO2 too"],
     accent: "text-orange-400",
     border: "border-orange-500/30",
@@ -57,6 +79,7 @@ const DEXA_PROVIDERS = [
     description:
       "Many Life Time Athletic clubs offer DEXA scans on-site through their Performance services. Convenient if you're already a member — no extra travel required.",
     url: "https://www.lifetime.life/life-time-offerings/health-services/dexa-scan.html",
+    affiliateUrl: undefined, // ← find on Impact.com: search "Life Time" affiliate program
     highlights: ["Member perk", "On-site clinics", "Paired coaching", "Multiple cities"],
     accent: "text-red-400",
     border: "border-red-500/30",
@@ -125,7 +148,7 @@ export default function Recommendations() {
                 </div>
 
                 <a
-                  href={provider.url}
+                  href={provider.affiliateUrl ?? `${provider.url}${UTM}`}
                   target="_blank"
                   rel="noreferrer"
                   className={`relative z-10 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm uppercase tracking-widest border transition-all
