@@ -110,7 +110,7 @@ export default function Onboarding() {
               <div className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Days Per Week (1-7)</label>
-                  <input type="number" min="1" max="7" value={formData.daysPerWeek} onChange={e => setFormData({...formData, daysPerWeek: Number(e.target.value)})} className="w-full bg-background border border-border rounded-xl px-4 py-4 font-mono text-2xl text-center focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
+                  <input type="number" min="1" max="7" value={formData.daysPerWeek} onChange={e => setFormData({...formData, daysPerWeek: Math.min(7, Math.max(1, Number(e.target.value)))})} className="w-full bg-background border border-border rounded-xl px-4 py-4 font-mono text-2xl text-center focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Other Activities (Optional)</label>
