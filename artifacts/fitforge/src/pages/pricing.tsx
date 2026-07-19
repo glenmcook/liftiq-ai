@@ -179,7 +179,7 @@ export default function Pricing() {
                     <div className="text-sm text-muted-foreground pb-1.5">after trial</div>
                   </div>
                   <div className="mt-1.5 inline-flex items-center gap-1.5 bg-primary/10 border border-primary/30 rounded-full px-3 py-1">
-                    <span className="text-primary text-xs font-black font-mono uppercase tracking-wider">14-day free trial</span>
+                    <span className="text-primary text-xs font-black font-mono uppercase tracking-wider">7-day free trial</span>
                   </div>
                   {selectedInterval === "year" && (
                     <div className="text-xs text-primary font-mono mt-1.5">
@@ -221,7 +221,7 @@ export default function Pricing() {
                   )}
                 </button>
                 <p className="text-center text-xs text-muted-foreground font-mono">
-                  No charge for 14 days · Cancel anytime
+                  No charge for 7 days · Cancel anytime
                 </p>
                 {checkout.isError && (
                   <p className="text-xs text-red-400 text-center font-mono">{(checkout.error as any)?.message}</p>
