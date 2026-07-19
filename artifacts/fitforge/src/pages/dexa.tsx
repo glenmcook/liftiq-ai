@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
-import { useListDexaScans, useCreateDexaScan } from "@workspace/api-client-react";
+import { useListDexaScans, useCreateDexaScan, getListDexaScansQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
-import { Plus, Activity, Loader2, Upload, FileText, X, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Activity, Loader2, Upload, FileText, X, CheckCircle, ChevronDown, ChevronUp, ShieldCheck } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 type ParsedDexa = {
@@ -114,7 +114,7 @@ export default function Dexa() {
     if (formData.visceralFatLevel != null) payload.visceralFatLevel = formData.visceralFatLevel;
     if (formData.notes) payload.notes = formData.notes;
     await createScan.mutateAsync({ data: payload });
-    queryClient.invalidateQueries({ queryKey: ["/api/dexa"] });
+    queryClient.invalidateQueries({ queryKey: getListDexaScansQueryKey() });
     closeForm();
   };
 
@@ -125,6 +125,10 @@ export default function Dexa() {
           <div className="space-y-2">
             <h1 className="text-4xl font-extrabold tracking-widest uppercase">DEXA Logs</h1>
             <p className="text-primary font-mono text-sm tracking-widest">BODY COMPOSITION SCANS</p>
+            <div className="flex items-start gap-2 pt-1 text-xs text-muted-foreground max-w-md leading-relaxed">
+              <ShieldCheck className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+              <span>Uploaded reports are processed in memory only — never stored. The AI extracts body composition numbers only; all personal identifiers (name, DOB, patient ID) are ignored and never saved.</span>
+            </div>
           </div>
           {mode === null && (
             <div className="flex gap-3">
