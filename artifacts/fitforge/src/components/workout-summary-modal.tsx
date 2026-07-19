@@ -223,13 +223,8 @@ export function WorkoutSummaryModal({ dayLabel, startedAt, completedAt, loggedSe
           </div>
 
           {/* Footer */}
-          <div style={{ padding: "10px 24px 16px", borderTop: "1px solid #111", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ padding: "10px 24px 16px", borderTop: "1px solid #111" }}>
             <span style={{ color: "#333", fontSize: 10, letterSpacing: "0.1em" }}>liftiq.app</span>
-            <div style={{ display: "flex", gap: 4 }}>
-              {[accentCss, "#555", "#333"].map((c, i) => (
-                <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: c }} />
-              ))}
-            </div>
           </div>
         </div>
 
