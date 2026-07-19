@@ -14,7 +14,7 @@ export default function Plan() {
   const handleRegenerate = async () => {
     if (!confirming) { setConfirming(true); return; }
     setConfirming(false);
-    await generatePlan.mutateAsync({});
+    await generatePlan.mutateAsync(undefined as unknown as void);
     queryClient.invalidateQueries({ queryKey: getGetActivePlanQueryKey() });
   };
 

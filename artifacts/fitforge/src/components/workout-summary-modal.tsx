@@ -213,9 +213,15 @@ export function WorkoutSummaryModal({ dayLabel, startedAt, completedAt, loggedSe
                     {data.pr && <span style={{ background: accentCss, color: "#050505", fontSize: 8, fontWeight: 800, padding: "1px 5px", borderRadius: 4, letterSpacing: "0.08em" }}>PR</span>}
                     <span style={{ color: "#ccc", fontSize: 12, fontWeight: 500 }}>{name}</span>
                   </div>
-                  <div style={{ display: "flex", gap: 12 }}>
-                    <span style={{ color: "#555", fontSize: 11 }}>{data.sets} sets</span>
-                    {data.maxWeight > 0 && <span style={{ color: "#444", fontSize: 11 }}>{data.maxWeight.toLocaleString()} lbs</span>}
+                  <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                    <span style={{ color: "#555", fontSize: 11, fontFamily: "monospace" }}>
+                      {data.sets} sets
+                    </span>
+                    {data.maxWeight > 0 && (
+                      <span style={{ color: "#444", fontSize: 11 }}>
+                        {data.maxWeight.toLocaleString()} lbs
+                      </span>
+                    )}
                   </div>
                 </div>
               ))}

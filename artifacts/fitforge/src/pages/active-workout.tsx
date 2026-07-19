@@ -124,7 +124,7 @@ export default function ActiveWorkout() {
           <WorkoutSummaryModal
             dayLabel={day.label}
             startedAt={session.startedAt}
-            loggedSets={session.loggedSets ?? []}
+            loggedSets={(session.loggedSets ?? []).map(s => ({ ...s, actualWeightLbs: s.actualWeightLbs ?? null }))}
             onDone={() => setLocation("/")}
           />
         )}
