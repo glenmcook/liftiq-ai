@@ -8,7 +8,7 @@ export class StripeService {
   }
 
   async createCheckoutSession(customerId: string, priceId: string, baseUrl: string) {
-    const stripe = await getUncachableStripeClient();
+    const stripe = getUncachableStripeClient();
     return stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
@@ -20,7 +20,7 @@ export class StripeService {
   }
 
   async createPortalSession(customerId: string, returnUrl: string) {
-    const stripe = await getUncachableStripeClient();
+    const stripe = getUncachableStripeClient();
     return stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: returnUrl,

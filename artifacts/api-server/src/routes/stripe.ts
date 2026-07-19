@@ -18,41 +18,39 @@ router.get("/stripe/status", async (_req, res): Promise<void> => {
 });
 
 // ─── GET /api/stripe/products ────────────────────────────────────────────────
+// Fetches directly from Stripe API so it works even before sync runs
 
 router.get("/stripe/products", async (_req, res): Promise<void> => {
   try {
-    // Return empty if Stripe isn't configured yet
-    let rows: any[];
+    const { getUncachableStripeClient } = await import("../stripeClient");
+    let stripe: any;
     try {
-      rows = await stripeStorage.listProductsWithPrices();
+      stripe = getUncachableStripeClient();
     } catch {
-      res.json({ data: [] });
+      res.json({ data: [] }); // Stripe not configured yet
       return;
     }
 
-    const map = new Map<string, any>();
-    for (const row of rows) {
-      const r = row as any;
-      if (!map.has(r.product_id)) {
-        map.set(r.product_id, {
-          id: r.product_id,
-          name: r.product_name,
-          description: r.product_description,
-          metadata: r.product_metadata ?? {},
-          prices: [],
-        });
-      }
-      if (r.price_id) {
-        map.get(r.product_id).prices.push({
-          id: r.price_id,
-          unitAmount: r.unit_amount,
-          currency: r.currency,
-          recurring: r.recurring,
-        });
-      }
-    }
+    const products = await stripe.products.list({ active: true, limit: 20 });
+    const result = await Promise.all(
+      products.data.map(async (product: any) => {
+        const prices = await stripe.prices.list({ product: product.id, active: true, limit: 10 });
+        return {
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          metadata: product.metadata ?? {},
+          prices: prices.data.map((p: any) => ({
+            id: p.id,
+            unitAmount: p.unit_amount,
+            currency: p.currency,
+            recurring: p.recurring,
+          })),
+        };
+      })
+    );
 
-    res.json({ data: Array.from(map.values()) });
+    res.json({ data: result });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
