@@ -154,7 +154,7 @@ IMPORTANT — read the athlete profile carefully before choosing exercises:
 - Adjust volume and intensity to their goal (fat loss = higher reps, shorter rest; muscle gain = heavier, lower reps; athletic performance = mix of power and hypertrophy)
 - Do NOT default to a generic template — the exercise selection, rep schemes, and weights must reflect THIS person's profile
 
-The plan should run ${profile?.daysPerWeek ?? 6} days. Use a PPL split and label days as Pull/Push/Legs, optionally with Heavy/Light/Volume modifiers if the athlete trains 6 days.
+The plan should run ${profile?.daysPerWeek ?? 6} days. Use a PPL split. Label days simply as Pull/Push/Legs unless you have a specific training reason to differentiate intensity (e.g. the athlete trains 6 days and needs a deload day, or their goal explicitly benefits from undulating periodization). Do NOT add Heavy/Light/Volume labels just to fill slots — only use them if they genuinely serve this athlete's program.
 
 Return ONLY this exact JSON structure, no markdown, no explanation:
 {
