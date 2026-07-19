@@ -7,7 +7,7 @@ import { Check, ArrowRight, ArrowLeft, Loader2, Trophy, PlayCircle } from "lucid
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 
-function SetRow({ prescribedSet, exercise, session, onSetCompleted, logSet }: any) {
+function SetRow({ prescribedSet, exercise, session, sessionId, onSetCompleted, logSet }: any) {
   const logged = session?.loggedSets?.find((s: any) => s.exerciseId === exercise.exerciseId && s.setNumber === prescribedSet.setNumber);
   const [reps, setReps] = useState(logged?.actualReps || prescribedSet.targetRepsMax);
   const [weight, setWeight] = useState(logged?.actualWeightLbs || prescribedSet.targetWeightLbs || 0);
@@ -138,6 +138,7 @@ export default function ActiveWorkout() {
               prescribedSet={set}
               exercise={exercise}
               session={session}
+              sessionId={sessionId}
               logSet={logSet}
               onSetCompleted={(secs: number) => setRestSeconds(secs)}
             />
