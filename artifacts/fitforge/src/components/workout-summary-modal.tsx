@@ -13,12 +13,14 @@ interface LoggedSet {
 interface WorkoutSummaryModalProps {
   dayLabel: string;
   startedAt: string;
+  completedAt?: string | null;
   loggedSets: LoggedSet[];
   onDone: () => void;
 }
 
-function formatDuration(startedAt: string): string {
-  const ms = Date.now() - new Date(startedAt).getTime();
+function formatDuration(startedAt: string, completedAt?: string | null): string {
+  const end = completedAt ? new Date(completedAt).getTime() : Date.now();
+  const ms = end - new Date(startedAt).getTime();
   const totalMins = Math.round(ms / 60000);
   if (totalMins < 60) return `${totalMins}m`;
   return `${Math.floor(totalMins / 60)}h ${totalMins % 60}m`;
@@ -28,7 +30,7 @@ function formatDate(): string {
   return new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
-export function WorkoutSummaryModal({ dayLabel, startedAt, loggedSets, onDone }: WorkoutSummaryModalProps) {
+export function WorkoutSummaryModal({ dayLabel, startedAt, completedAt, loggedSets, onDone }: WorkoutSummaryModalProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [sharing, setSharing] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -37,7 +39,7 @@ export function WorkoutSummaryModal({ dayLabel, startedAt, loggedSets, onDone }:
   const totalSets = loggedSets.length;
   const totalVolume = loggedSets.reduce((acc, s) => acc + (s.actualWeightLbs ?? 0) * s.actualReps, 0);
   const prs = loggedSets.filter((s) => s.isPersonalRecord).length;
-  const duration = formatDuration(startedAt);
+  const duration = formatDuration(startedAt, completedAt);
 
   // Group sets by exercise for the breakdown
   const byExercise: Record<string, { sets: number; volume: number; pr: boolean }> = {};
