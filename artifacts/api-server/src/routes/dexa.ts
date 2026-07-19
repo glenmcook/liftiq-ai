@@ -3,11 +3,18 @@ import { desc } from "drizzle-orm";
 import { db, dexaScansTable } from "@workspace/db";
 import multer from "multer";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { execFile } from "child_process";
+import { promisify } from "util";
+import { mkdtemp, readdir, readFile, rm, writeFile } from "fs/promises";
+import { tmpdir } from "os";
+import { join } from "path";
 import {
   CreateDexaScanBody,
   CreateDexaScanResponse,
   ListDexaScansResponse,
 } from "@workspace/api-zod";
+
+const execFileAsync = promisify(execFile);
 
 const router: IRouter = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
@@ -62,48 +69,57 @@ router.post("/dexa-scans/parse", upload.single("file"), async (req, res): Promis
 Return ONLY valid JSON, no markdown, no explanation.`;
 
   try {
-    let extractedText = "";
+    // Build image content for OpenAI Vision
+    const imageContents: { type: "image_url"; image_url: { url: string; detail: "high" } }[] = [];
 
     if (isPdf) {
-      // Extract text from PDF using pdf-parse
-      const pdfParse = (await import("pdf-parse")).default;
-      const pdfData = await pdfParse(buffer);
-      extractedText = pdfData.text;
-
-      const response = await openai.chat.completions.create({
-        model: "gpt-5.6-luna",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Here is the text extracted from a DEXA scan PDF report:\n\n${extractedText.slice(0, 8000)}` },
-        ],
-        response_format: { type: "json_object" },
-      });
-
-      const parsed = JSON.parse(response.choices[0].message.content ?? "{}");
-      res.json(parsed);
+      // Convert PDF pages to PNG images using pdftoppm
+      const tmpDir = await mkdtemp(join(tmpdir(), "dexa-"));
+      const pdfPath = join(tmpDir, "input.pdf");
+      await writeFile(pdfPath, buffer);
+      try {
+        await execFileAsync("pdftoppm", ["-png", "-r", "200", "-l", "4", pdfPath, join(tmpDir, "page")]);
+        const files = (await readdir(tmpDir)).filter(f => f.endsWith(".png")).sort();
+        for (const file of files.slice(0, 4)) {
+          const imgBuf = await readFile(join(tmpDir, file));
+          imageContents.push({
+            type: "image_url",
+            image_url: { url: `data:image/png;base64,${imgBuf.toString("base64")}`, detail: "high" },
+          });
+        }
+      } finally {
+        await rm(tmpDir, { recursive: true, force: true });
+      }
     } else {
-      // Image: use Vision API
-      const base64 = buffer.toString("base64");
-      const dataUrl = `data:${mimetype};base64,${base64}`;
-
-      const response = await openai.chat.completions.create({
-        model: "gpt-5.6-luna",
-        messages: [
-          { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: "Extract all body composition data from this DEXA scan report image." },
-              { type: "image_url", image_url: { url: dataUrl, detail: "high" } },
-            ],
-          },
-        ],
-        response_format: { type: "json_object" },
+      // Direct image upload
+      imageContents.push({
+        type: "image_url",
+        image_url: { url: `data:${mimetype};base64,${buffer.toString("base64")}`, detail: "high" },
       });
-
-      const parsed = JSON.parse(response.choices[0].message.content ?? "{}");
-      res.json(parsed);
     }
+
+    if (imageContents.length === 0) {
+      res.status(422).json({ error: "Could not extract any pages from the PDF." });
+      return;
+    }
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-5.6-luna",
+      messages: [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Extract all body composition data from this DEXA scan report." },
+            ...imageContents,
+          ],
+        },
+      ],
+      response_format: { type: "json_object" },
+    });
+
+    const parsed = JSON.parse(response.choices[0].message.content ?? "{}");
+    res.json(parsed);
   } catch (err: any) {
     console.error("DEXA parse error:", err);
     res.status(500).json({ error: "Failed to extract data from the file. Try a clearer image or enter manually." });
