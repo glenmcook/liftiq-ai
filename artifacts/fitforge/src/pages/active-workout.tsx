@@ -16,7 +16,7 @@ function SetRow({ prescribedSet, exercise, session, onSetCompleted, logSet }: an
   const handleLog = async () => {
     if (logged) return;
     await logSet.mutateAsync(
-      { data: { exerciseId: exercise.exerciseId, setNumber: prescribedSet.setNumber, actualReps: reps, actualWeightLbs: weight } },
+      { sessionId, data: { exerciseId: exercise.exerciseId, setNumber: prescribedSet.setNumber, actualReps: reps, actualWeightLbs: weight } },
       {
          onSuccess: () => {
            queryClient.invalidateQueries({ queryKey: getGetSessionQueryKey(session.id) });
