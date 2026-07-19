@@ -3,6 +3,7 @@ import { useRoute, useLocation } from "wouter";
 import { useGetSession, useLogSet, useUpdateSession, getGetSessionQueryKey, getGetDashboardSummaryQueryKey, useGetWorkoutDay } from "@workspace/api-client-react";
 import { Timer } from "@/components/timer";
 import { ExerciseModal } from "@/components/exercise-modal";
+import { WorkoutSummaryModal } from "@/components/workout-summary-modal";
 import { Check, ArrowRight, ArrowLeft, Loader2, Trophy, PlayCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -88,6 +89,7 @@ export default function ActiveWorkout() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [restSeconds, setRestSeconds] = useState<number | null>(null);
   const [howToExercise, setHowToExercise] = useState<any>(null);
+  const [showSummary, setShowSummary] = useState(false);
 
   if (loadingSession || loadingDay) {
      return <div className="min-h-screen bg-background text-primary flex items-center justify-center font-mono animate-pulse tracking-widest text-xl"><Loader2 className="w-8 h-8 animate-spin mr-3"/> LOADING COMBAT DATA...</div>;
@@ -100,21 +102,33 @@ export default function ActiveWorkout() {
 
   if (!exercise) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-8 space-y-8 border-x border-border/30 max-w-2xl mx-auto shadow-2xl">
-        <Trophy className="w-24 h-24 text-primary drop-shadow-[0_0_30px_rgba(57,255,20,0.5)]" />
-        <h1 className="text-5xl font-extrabold uppercase tracking-tighter text-center">PROTOCOL COMPLETE</h1>
-        <p className="text-muted-foreground font-mono text-center text-lg max-w-md">All prescribed sets have been executed. Your evolution is logged.</p>
-        <button
-           onClick={async () => {
-             await updateSession.mutateAsync({ sessionId, data: { completedAt: new Date().toISOString() } });
-             queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
-             setLocation("/");
-           }}
-           className="bg-primary text-primary-foreground px-10 py-5 rounded-xl font-bold uppercase tracking-widest shadow-[0_0_30px_rgba(57,255,20,0.4)] hover:shadow-[0_0_50px_rgba(57,255,20,0.6)] hover:scale-105 transition-all w-full md:w-auto mt-8"
-        >
-           FINISH & RETURN
-        </button>
-      </div>
+      <>
+        <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-8 space-y-8 border-x border-border/30 max-w-2xl mx-auto shadow-2xl">
+          <Trophy className="w-24 h-24 text-primary drop-shadow-[0_0_30px_rgba(57,255,20,0.5)]" />
+          <h1 className="text-5xl font-extrabold uppercase tracking-tighter text-center">PROTOCOL COMPLETE</h1>
+          <p className="text-muted-foreground font-mono text-center text-lg max-w-md">All prescribed sets have been executed. Your evolution is logged.</p>
+          <button
+             onClick={async () => {
+               await updateSession.mutateAsync({ sessionId, data: { completedAt: new Date().toISOString() } });
+               queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+               setShowSummary(true);
+             }}
+             disabled={updateSession.isPending}
+             className="bg-primary text-primary-foreground px-10 py-5 rounded-xl font-bold uppercase tracking-widest shadow-[0_0_30px_rgba(57,255,20,0.4)] hover:shadow-[0_0_50px_rgba(57,255,20,0.6)] hover:scale-105 transition-all w-full md:w-auto mt-8 disabled:opacity-60"
+          >
+             {updateSession.isPending ? "SAVING…" : "FINISH & RETURN"}
+          </button>
+        </div>
+
+        {showSummary && (
+          <WorkoutSummaryModal
+            dayLabel={day.label}
+            startedAt={session.startedAt}
+            loggedSets={session.loggedSets ?? []}
+            onDone={() => setLocation("/")}
+          />
+        )}
+      </>
     );
   }
 
