@@ -143,33 +143,40 @@ router.post("/plans/generate", async (req, res): Promise<void> => {
         },
         {
           role: "user",
-          content: `Generate a Push/Pull/Legs workout plan for this athlete: ${profileContext}
+          content: `Generate a personalized Push/Pull/Legs workout plan for this specific athlete:
 
-The plan should run ${profile?.daysPerWeek ?? 6} days using a PPL split (Push, Pull, Legs repeated or modified based on days).
+ATHLETE PROFILE:
+${profileContext}
 
-Return this exact JSON structure:
+IMPORTANT — read the athlete profile carefully before choosing exercises:
+- Select exercises that complement their current activities (e.g. if they swim, emphasize pulling strength and shoulder mobility; if they run, consider hip stability and single-leg work)
+- Match exercise complexity to their experience level (beginners get simpler movement patterns; advanced athletes get more technical variations)
+- Adjust volume and intensity to their goal (fat loss = higher reps, shorter rest; muscle gain = heavier, lower reps; athletic performance = mix of power and hypertrophy)
+- Do NOT default to a generic template — the exercise selection, rep schemes, and weights must reflect THIS person's profile
+
+The plan should run ${profile?.daysPerWeek ?? 6} days. Use a PPL split and label days as Pull/Push/Legs, optionally with Heavy/Light/Volume modifiers if the athlete trains 6 days.
+
+Return ONLY this exact JSON structure, no markdown, no explanation:
 {
-  "name": "string",
-  "description": "string",
+  "name": "string — a name reflecting this athlete's goal, not a generic template name",
+  "description": "string — 1-2 sentences describing why this specific plan fits this athlete",
   "planType": "ppl",
-  "aiNotes": "string - 2-3 sentence coaching note",
+  "aiNotes": "string — 2-3 sentences of coaching notes specific to this athlete's situation, mentioning their current activities and how the plan accounts for them",
   "days": [
     {
       "dayNumber": 1,
       "label": "Pull (Heavy)",
       "focus": "pull",
       "restSeconds": 120,
-      "notes": "optional note",
+      "notes": "optional note about this specific day",
       "exercises": [
         {
-          "groupName": "Lat Movement",
+          "groupName": "descriptive group name",
           "pickOne": true,
           "sortOrder": 0,
-          "exerciseName": "Lat Pulldown",
+          "exerciseName": "Exercise Name",
           "sets": [
-            { "setNumber": 1, "targetWeightLbs": 110, "targetRepsMin": 8, "targetRepsMax": 8, "restSeconds": 90 },
-            { "setNumber": 2, "targetWeightLbs": 120, "targetRepsMin": 8, "targetRepsMax": 8, "restSeconds": 90 },
-            { "setNumber": 3, "targetWeightLbs": 130, "targetRepsMin": 6, "targetRepsMax": 8, "restSeconds": 120 }
+            { "setNumber": 1, "targetWeightLbs": 110, "targetRepsMin": 8, "targetRepsMax": 8, "restSeconds": 90 }
           ]
         }
       ]
@@ -177,13 +184,13 @@ Return this exact JSON structure:
   ]
 }
 
-Important rules:
-- Include 4-6 exercise groups per day
-- For "pick one" groups (pickOne: true), include 2 exercise options with the same groupName
-- Weight recommendations should match the user's experience level
-- For beginner: lighter weights, 3x10-12. For intermediate: progressive sets, 3x6-10. For advanced: heavy first sets, 3-5 sets
-- Rest times: compound movements 2-3 min, isolation 60-90 sec
-- Include exercises: Pull day (Lat Pulldown/Pullup, Cable Row/Barbell Row, DB Row, Face Pull, Bicep Curl, Hanging Knee Raises), Push day (Bench Press/DB Press, Incline Press, Shoulder Press, Lateral Raises, Tricep Pushdown, Cable Fly), Legs day (Squat/Leg Press, Romanian Deadlift, Leg Extension, Leg Curl, Calf Raises)`,
+Rules:
+- 4-6 exercise groups per day
+- When pickOne is true, include exactly 2 exercise options sharing the same groupName (give the athlete a choice)
+- Weight targets must be realistic for the athlete's stated experience level and body weight
+- For beginners: 3 sets of 10-15 reps, moderate weight. For intermediate: 3-4 sets of 6-12 reps, progressive. For advanced: 4-5 sets of 4-8 reps, heavy
+- Rest times: compound movements 90-180s, isolation 45-90s
+- Choose exercises that serve THIS athlete — vary from the standard template if their profile warrants it`,
         },
       ],
     });
