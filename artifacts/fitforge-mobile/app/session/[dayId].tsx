@@ -20,6 +20,15 @@ import {
   useLogSet,
   useUpdateSession,
 } from '@workspace/api-client-react';
+import { CelebrationModal } from '@/components/CelebrationModal';
+import { SwapExerciseModal } from '@/components/SwapExerciseModal';
+
+interface SwappedExercise {
+  id: number;
+  name: string;
+  muscleGroup: string;
+  equipment?: string | null;
+}
 
 interface LogEntry {
   exerciseId: number;
@@ -45,6 +54,9 @@ export default function SessionScreen() {
   const [starting, setStarting] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [logEntries, setLogEntries] = useState<Record<string, LogEntry>>({});
+  const [swaps, setSwaps] = useState<Record<number, SwappedExercise>>({});
+  const [swapTarget, setSwapTarget] = useState<{ exerciseId: number; muscleGroup: string } | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   const entryKey = (exerciseId: number, setNumber: number) =>
     `${exerciseId}-${setNumber}`;
@@ -148,10 +160,7 @@ export default function SessionScreen() {
               sessionId,
               data: { completedAt: new Date().toISOString() },
             });
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            Alert.alert('Great work! 💪', 'Workout completed!', [
-              { text: 'Done', onPress: () => router.replace('/(tabs)/history') },
-            ]);
+            setShowCelebration(true);
           } catch {
             Alert.alert('Error', 'Could not finish session.');
             setFinishing(false);
@@ -252,44 +261,68 @@ export default function SessionScreen() {
               )}
             </View>
 
-            {group.exercises.map((ex) => (
+            {group.exercises.map((ex) => {
+              const swapped = swaps[ex.exerciseId];
+              const effective = swapped ?? ex.exercise;
+              return (
               <View
                 key={ex.id}
                 style={[
                   styles.exerciseCard,
                   {
                     backgroundColor: colors.card,
-                    borderColor: colors.cardBorder,
+                    borderColor: swapped ? '#f59e0b' : colors.cardBorder,
+                    borderWidth: swapped ? 1.5 : 1,
                   },
                 ]}
               >
                 <View style={styles.exerciseHeader}>
                   <View style={styles.exerciseTitleRow}>
-                    <Text
-                      style={[
-                        styles.exerciseName,
-                        { color: colors.foreground },
-                      ]}
-                    >
-                      {ex.exercise.name}
-                    </Text>
-                    <View
-                      style={[
-                        styles.muscleBadge,
-                        { backgroundColor: colors.muted },
-                      ]}
-                    >
+                    <View style={{ flex: 1 }}>
+                      {swapped && (
+                        <Text style={[styles.originalName, { color: colors.mutedForeground }]}>
+                          ↩ {ex.exercise.name}
+                        </Text>
+                      )}
                       <Text
                         style={[
-                          styles.muscleText,
-                          { color: colors.mutedForeground },
+                          styles.exerciseName,
+                          { color: swapped ? '#f59e0b' : colors.foreground },
                         ]}
                       >
-                        {ex.exercise.muscleGroup}
+                        {effective.name}
+                        {swapped ? '  ↔' : ''}
                       </Text>
                     </View>
+                    <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                      <View
+                        style={[
+                          styles.muscleBadge,
+                          { backgroundColor: colors.muted },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.muscleText,
+                            { color: colors.mutedForeground },
+                          ]}
+                        >
+                          {effective.muscleGroup}
+                        </Text>
+                      </View>
+                      {sessionId && (
+                        <Pressable
+                          onPress={() => setSwapTarget({ exerciseId: ex.exerciseId, muscleGroup: ex.exercise.muscleGroup })}
+                          style={[styles.busyBtn, { backgroundColor: swapped ? '#f59e0b20' : colors.muted, borderColor: swapped ? '#f59e0b' : colors.border }]}
+                        >
+                          <Text style={[styles.busyBtnText, { color: swapped ? '#f59e0b' : colors.mutedForeground }]}>
+                            {swapped ? 'Re-swap' : 'Busy?'}
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
                   </View>
-                  {ex.exercise.equipment && (
+                  {effective.equipment && (
                     <Text
                       style={[
                         styles.equipment,
@@ -297,7 +330,7 @@ export default function SessionScreen() {
                       ]}
                     >
                       <Feather name="package" size={11} />{' '}
-                      {ex.exercise.equipment}
+                      {effective.equipment}
                     </Text>
                   )}
                 </View>
@@ -440,7 +473,7 @@ export default function SessionScreen() {
                         <Pressable
                           onPress={() =>
                             handleLogSet(
-                              ex.exerciseId,
+                              swapped ? swapped.id : ex.exerciseId,
                               ps.setNumber,
                               entry.reps,
                               entry.weight
@@ -473,10 +506,32 @@ export default function SessionScreen() {
                   })}
                 </View>
               </View>
-            ))}
+              );
+            })}
           </View>
         ))}
       </ScrollView>
+
+      {/* Modals */}
+      <CelebrationModal
+        visible={showCelebration}
+        onDone={() => {
+          setShowCelebration(false);
+          router.replace('/(tabs)/history');
+        }}
+      />
+      <SwapExerciseModal
+        visible={!!swapTarget}
+        currentExerciseId={swapTarget?.exerciseId ?? 0}
+        muscleGroup={swapTarget?.muscleGroup ?? ''}
+        onSelect={(exercise) => {
+          if (swapTarget) {
+            setSwaps((prev) => ({ ...prev, [swapTarget.exerciseId]: exercise }));
+          }
+          setSwapTarget(null);
+        }}
+        onClose={() => setSwapTarget(null)}
+      />
 
       {/* Fixed bottom button */}
       <View
@@ -653,7 +708,24 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
     fontWeight: '600' as const,
-    flex: 1,
+  },
+  originalName: {
+    fontSize: 11,
+    fontFamily: 'Inter_400Regular',
+    textDecorationLine: 'line-through',
+    marginBottom: 2,
+  },
+  busyBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  busyBtnText: {
+    fontSize: 10,
+    fontFamily: 'Inter_600SemiBold',
+    fontWeight: '600' as const,
+    letterSpacing: 0.3,
   },
   muscleBadge: {
     paddingHorizontal: 7,

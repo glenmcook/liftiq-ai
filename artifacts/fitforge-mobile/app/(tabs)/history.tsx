@@ -5,6 +5,7 @@ import {
   Platform,
   Pressable,
   RefreshControl,
+  Share,
   StyleSheet,
   Text,
   View,
@@ -111,15 +112,45 @@ export default function HistoryScreen() {
           </Text>
         </View>
       }
-      renderItem={({ item }) => (
-        <SessionCard
-          dayLabel={item.dayLabel}
-          startedAt={item.startedAt}
-          completedAt={item.completedAt}
-          totalSets={item.totalSets}
-          completedSets={item.completedSets}
-        />
-      )}
+      renderItem={({ item }) => {
+        const isComplete = !!item.completedAt;
+        const handleShare = async () => {
+          const duration = item.completedAt
+            ? (() => {
+                const ms = new Date(item.completedAt).getTime() - new Date(item.startedAt).getTime();
+                const m = Math.floor(ms / 60000);
+                return `${m}m`;
+              })()
+            : '';
+          await Share.share({
+            message: `💪 Just crushed ${item.dayLabel ?? 'a workout'} on LiftIQ AI!\n⏱ ${duration} · 📦 ${item.completedSets} sets\n\nTrack yours → liftiq.ai`,
+            title: `${item.dayLabel ?? 'Workout'} — LiftIQ AI`,
+          });
+        };
+        return (
+          <View>
+            <SessionCard
+              dayLabel={item.dayLabel}
+              startedAt={item.startedAt}
+              completedAt={item.completedAt}
+              totalSets={item.totalSets}
+              completedSets={item.completedSets}
+            />
+            {isComplete && (
+              <Pressable
+                onPress={handleShare}
+                style={({ pressed }) => [
+                  styles.shareBtn,
+                  { borderColor: colors.border, backgroundColor: pressed ? colors.muted : 'transparent' },
+                ]}
+              >
+                <Feather name="share-2" size={13} color={colors.primary} />
+                <Text style={[styles.shareBtnText, { color: colors.primary }]}>Share</Text>
+              </Pressable>
+            )}
+          </View>
+        );
+      }}
     />
   );
 }
@@ -173,6 +204,24 @@ const styles = StyleSheet.create({
   },
   retryText: {
     fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
+    fontWeight: '600' as const,
+  },
+  shareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    alignSelf: 'flex-end',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: -4,
+    marginBottom: 10,
+    marginRight: 0,
+  },
+  shareBtnText: {
+    fontSize: 12,
     fontFamily: 'Inter_600SemiBold',
     fontWeight: '600' as const,
   },

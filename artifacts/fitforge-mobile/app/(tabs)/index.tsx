@@ -103,7 +103,7 @@ export default function DashboardScreen() {
             {greeting()}
           </Text>
           <Text style={[styles.title, { color: colors.foreground }]}>
-            FitForge
+            LiftIQ AI
           </Text>
         </View>
         <View style={[styles.streakBadge, { backgroundColor: colors.primary }]}>
