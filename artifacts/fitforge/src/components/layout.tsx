@@ -2,6 +2,7 @@ import { Link, useLocation } from "wouter";
 import { Dumbbell, Home, LineChart, History, Activity, Sparkles, Settings, Star, BookOpen, Utensils, Crown } from "lucide-react";
 import { LiftIQMark } from "./liftiq-logo";
 import { useQuery } from "@tanstack/react-query";
+import { TrialBanner } from "./trial-banner";
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -81,8 +82,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      <div className="flex-1 p-4 md:p-8 max-w-5xl mx-auto w-full overflow-y-auto">
-        {children}
+      <div className="flex-1 flex flex-col overflow-y-auto">
+        <TrialBanner />
+        <div className="flex-1 p-4 md:p-8 max-w-5xl mx-auto w-full">
+          {children}
+        </div>
       </div>
 
       {/* Mobile nav bar */}

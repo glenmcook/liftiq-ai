@@ -10,6 +10,7 @@ import checkinsRouter from "./checkins";
 import dashboardRouter from "./dashboard";
 import dietRouter from "./diet";
 import stripeRouter from "./stripe";
+import pushRouter from "./push";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(checkinsRouter);
 router.use(dashboardRouter);
 router.use(dietRouter);
 router.use(stripeRouter);
+router.use(pushRouter);
 
 export default router;

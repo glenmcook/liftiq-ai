@@ -23,6 +23,7 @@ import { CelebrationModal } from '@/components/CelebrationModal';
 import { SwapExerciseModal } from '@/components/SwapExerciseModal';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { useOfflineWorkoutDay } from '@/hooks/useOfflineWorkoutDay';
+import { notifyPersonalRecord } from '@/hooks/usePushNotifications';
 
 interface SwappedExercise {
   id: number;
@@ -135,7 +136,7 @@ export default function SessionScreen() {
       const parsedWeight = parseFloat(weight);
       // Use the swapped exercise ID for the API call if one is active for this slot
       const effectiveExerciseId = swaps[slotExerciseId]?.id ?? slotExerciseId;
-      await logSet.mutateAsync({
+      const result = await logSet.mutateAsync({
         sessionId,
         data: {
           exerciseId: effectiveExerciseId,
@@ -148,7 +149,20 @@ export default function SessionScreen() {
       });
       // Always key done-state on the slot (original) exercise ID
       updateEntry(slotExerciseId, setNumber, { done: true });
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      // Dopamine hit — fire an immediate push notification for PRs
+      if (result?.isPersonalRecord && Number.isFinite(parsedWeight) && parsedWeight > 0) {
+        const exerciseName =
+          swaps[slotExerciseId]?.name ??
+          day?.groups
+            .flatMap((g) => g.exercises)
+            .find((ex) => ex.exercise.id === slotExerciseId)?.exercise.name ??
+          'Exercise';
+        notifyPersonalRecord(exerciseName, parsedWeight);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
     } catch {
       Alert.alert('Error', 'Could not log set.');
     }

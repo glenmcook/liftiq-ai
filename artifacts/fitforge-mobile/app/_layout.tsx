@@ -14,6 +14,7 @@ import {
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { setBaseUrl } from '@workspace/api-client-react';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 // Set the base URL for the API client — Expo bundles need absolute URLs
 // since they run outside the web proxy.
@@ -31,6 +32,11 @@ function RootLayoutNav() {
       <Stack.Screen name="session" options={{ headerShown: false }} />
     </Stack>
   );
+}
+
+function PushSetup() {
+  usePushNotifications();
+  return null;
 }
 
 export default function RootLayout() {
@@ -55,6 +61,7 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView>
             <KeyboardProvider>
+              <PushSetup />
               <RootLayoutNav />
             </KeyboardProvider>
           </GestureHandlerRootView>
