@@ -1,92 +1,159 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
 
-// ── Congratulations message pool ─────────────────────────────────────────────
-const MESSAGES = [
-  { headline: "BEAST MODE: UNLOCKED", sub: "You showed up. You did the work. That's everything." },
-  { headline: "PROTOCOL EXECUTED", sub: "Every rep is a vote for the person you're becoming." },
-  { headline: "ANOTHER DAY, ANOTHER LEVEL", sub: "The weights didn't move themselves. You did that." },
-  { headline: "DOMINANCE. LOGGED.", sub: "Your future self is already thanking you." },
-  { headline: "MISSION ACCOMPLISHED", sub: "Most people quit before they start. You finished." },
-  { headline: "YOU EARNED THIS.", sub: "Rest hard. Come back harder." },
-  { headline: "IRON WILL CONFIRMED", sub: "Champions are made in sessions like this one." },
-  { headline: "LIMITS? WHAT LIMITS?", sub: "You just pushed past what yesterday's version of you thought was possible." },
-  { headline: "BUILT, NOT BORN", sub: "Greatness isn't gifted — it's ground out. Respect." },
-  { headline: "PROGRESS BANKED.", sub: "The compound interest of consistent effort is insane. Keep going." },
-  { headline: "NO DAYS OFF MENTALITY", sub: "When it's done it's done. And today — it's done right." },
-  { headline: "STRENGTH ACQUIRED", sub: "You came in, you focused, you delivered. That's the formula." },
+// ── Message pool — varied tone, paired with an emoji visual ──────────────────
+const CELEBRATIONS = [
+  {
+    emoji: "🔥💪🔥",
+    headline: "ABSOLUTELY ON FIRE",
+    sub: "You didn't just show up — you showed OUT. That's a different level.",
+  },
+  {
+    emoji: "🏆",
+    headline: "CHAMPION BEHAVIOUR",
+    sub: "Most people skip. You didn't. That gap is where greatness lives.",
+  },
+  {
+    emoji: "🦁",
+    headline: "THE LION IS FED",
+    sub: "Respect the grind. Today you were a straight-up animal.",
+  },
+  {
+    emoji: "⚡️⚡️⚡️",
+    headline: "PURE ELECTRICITY",
+    sub: "The energy you brought today? Completely unmatched.",
+  },
+  {
+    emoji: "🚀",
+    headline: "LAUNCHING DIFFERENT",
+    sub: "Every session like this is rocket fuel for your future self.",
+  },
+  {
+    emoji: "💎",
+    headline: "DIAMOND WORK ETHIC",
+    sub: "Forged under pressure. That's what you are.",
+  },
+  {
+    emoji: "🌊",
+    headline: "UNSTOPPABLE FORCE",
+    sub: "Like water — relentless, powerful, impossible to hold back.",
+  },
+  {
+    emoji: "🦅",
+    headline: "ELEVATION ACHIEVED",
+    sub: "While they rest, you rise. The view from up here? Earned.",
+  },
+  {
+    emoji: "⚔️",
+    headline: "WARRIOR PROTOCOL: DONE",
+    sub: "You fought the resistance and won. Every. Single. Rep.",
+  },
+  {
+    emoji: "🎯",
+    headline: "LOCKED IN & DELIVERED",
+    sub: "Focused. Disciplined. Lethal. That's what today looked like.",
+  },
+  {
+    emoji: "🌋",
+    headline: "VOLCANIC OUTPUT",
+    sub: "The force you put into that session? It moved mountains.",
+  },
+  {
+    emoji: "🧠💪",
+    headline: "MIND & MUSCLE ALIGNED",
+    sub: "When your brain and body sync up like that — nothing can stop you.",
+  },
+  {
+    emoji: "👑",
+    headline: "ROYALTY IN THE GYM",
+    sub: "Not everyone gets a crown. Yours was earned in this session.",
+  },
+  {
+    emoji: "🌟🌟🌟",
+    headline: "STELLAR PERFORMANCE",
+    sub: "Some sessions are just different. This was one of them.",
+  },
+  {
+    emoji: "🐉",
+    headline: "DRAGON ENERGY UNLEASHED",
+    sub: "Rare. Powerful. Impossible to ignore. That's your energy today.",
+  },
+  {
+    emoji: "💥",
+    headline: "DETONATED IT",
+    sub: "You walked in with a plan and blew the doors off. Incredible.",
+  },
+  {
+    emoji: "🏔️",
+    headline: "SUMMIT MENTALITY",
+    sub: "The peak belongs to those who keep climbing. Today you climbed.",
+  },
+  {
+    emoji: "🎖️",
+    headline: "DECORATED TODAY",
+    sub: "Not every soldier gets a medal. Today you earned yours.",
+  },
+  {
+    emoji: "🌅",
+    headline: "BUILT FOR THIS MOMENT",
+    sub: "Today's effort is tomorrow's strength. You're building something real.",
+  },
+  {
+    emoji: "🤯",
+    headline: "GENUINELY IMPRESSIVE",
+    sub: "If someone watched that session, their jaw would be on the floor.",
+  },
 ];
 
-// Pick a random message, seeded to the current date so it changes daily but
-// stays consistent within a single workout session.
-function getDailyMessage() {
-  const seed = Math.floor(Date.now() / (1000 * 60 * 60 * 24)); // changes each day
-  return MESSAGES[seed % MESSAGES.length];
+// Pick once per mount, randomly
+function pickRandom() {
+  return CELEBRATIONS[Math.floor(Math.random() * CELEBRATIONS.length)];
 }
 
-// ── Fireworks launcher ────────────────────────────────────────────────────────
+// ── Fireworks ─────────────────────────────────────────────────────────────────
 function launchFireworks(primaryHex: string) {
-  const duration = 3200;
-  const end = Date.now() + duration;
+  const colors = [primaryHex, "#FFD700", "#ffffff", "#ff4e50", "#a855f7"];
 
-  // Colours: theme accent + gold + white
-  const colors = [primaryHex, "#FFD700", "#ffffff", "#ff4e50", "#fc913a"];
-
-  // Initial centre burst
-  confetti({
-    particleCount: 120,
-    spread: 80,
-    origin: { x: 0.5, y: 0.55 },
-    colors,
-    startVelocity: 45,
-    gravity: 0.9,
-    scalar: 1.1,
-    shapes: ["star", "circle"],
-  });
+  // Big opening burst
+  confetti({ particleCount: 140, spread: 90, origin: { x: 0.5, y: 0.5 }, colors, startVelocity: 50, gravity: 0.85, scalar: 1.15, shapes: ["star", "circle"] });
 
   // Side cannons
   setTimeout(() => {
-    confetti({ particleCount: 60, angle: 60, spread: 55, origin: { x: 0, y: 0.65 }, colors, startVelocity: 50 });
-    confetti({ particleCount: 60, angle: 120, spread: 55, origin: { x: 1, y: 0.65 }, colors, startVelocity: 50 });
-  }, 300);
+    confetti({ particleCount: 70, angle: 55, spread: 60, origin: { x: 0, y: 0.6 }, colors, startVelocity: 55 });
+    confetti({ particleCount: 70, angle: 125, spread: 60, origin: { x: 1, y: 0.6 }, colors, startVelocity: 55 });
+  }, 350);
 
-  // Random rockets
+  // Sustained rockets
+  const end = Date.now() + 3500;
   const interval = setInterval(() => {
     if (Date.now() > end) { clearInterval(interval); return; }
     confetti({
-      particleCount: 35,
-      angle: 90 + (Math.random() - 0.5) * 60,
-      spread: 45,
-      origin: { x: Math.random(), y: 0.9 },
+      particleCount: 40,
+      angle: 85 + (Math.random() - 0.5) * 50,
+      spread: 50,
+      origin: { x: 0.15 + Math.random() * 0.7, y: 1 },
       colors,
-      startVelocity: 55 + Math.random() * 20,
-      gravity: 0.85,
-      scalar: 0.9,
+      startVelocity: 60 + Math.random() * 25,
+      gravity: 0.8,
+      scalar: 0.95,
     });
-  }, 420);
+  }, 400);
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 interface WorkoutCelebrationProps {
   onFinish: () => void;
-  finishLabel?: string;
   finishPending?: boolean;
 }
 
-export function WorkoutCelebration({ onFinish, finishLabel = "FINISH & RETURN", finishPending = false }: WorkoutCelebrationProps) {
-  const message = useRef(getDailyMessage());
-  const [visible, setVisible] = useState(false);
+export function WorkoutCelebration({ onFinish, finishPending = false }: WorkoutCelebrationProps) {
+  const celebration = useRef(pickRandom());
 
   useEffect(() => {
-    // Slight delay so the page has rendered before confetti fires
-    const t1 = setTimeout(() => setVisible(true), 80);
-
-    // Read theme primary colour from CSS vars
-    const raw = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim();
-    // Convert "h s% l%" → a rough hex for confetti (confetti needs hex)
-    // We'll use a bright green fallback if parsing fails
+    // Derive theme primary as hex for confetti
     let primaryHex = "#39ff14";
     try {
+      const raw = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim();
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d")!;
       ctx.fillStyle = `hsl(${raw})`;
@@ -95,58 +162,46 @@ export function WorkoutCelebration({ onFinish, finishLabel = "FINISH & RETURN", 
       primaryHex = "#" + [r, g, b].map(x => x.toString(16).padStart(2, "0")).join("");
     } catch {}
 
-    const t2 = setTimeout(() => launchFireworks(primaryHex), 200);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    const t = setTimeout(() => launchFireworks(primaryHex), 150);
+    return () => clearTimeout(t);
   }, []);
 
+  const { emoji, headline, sub } = celebration.current;
+
   return (
-    <div
-      className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-8 space-y-8 border-x border-border/30 max-w-2xl mx-auto shadow-2xl"
-      style={{ opacity: visible ? 1 : 0, transition: "opacity 0.4s ease" }}
-    >
-      {/* Trophy + glow */}
-      <div className="relative">
-        <div className="absolute inset-0 rounded-full bg-primary/20 blur-3xl scale-150 animate-pulse" />
-        <div className="relative text-8xl select-none animate-bounce" style={{ animationDuration: "1.4s" }}>🏆</div>
+    <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-8 gap-8 border-x border-border/30 max-w-2xl mx-auto shadow-2xl animate-in fade-in duration-500">
+
+      {/* Big emoji visual */}
+      <div className="relative flex items-center justify-center">
+        <div className="absolute rounded-full bg-primary/15 blur-3xl w-48 h-48 animate-pulse" />
+        <div
+          className="relative select-none leading-none"
+          style={{ fontSize: "clamp(5rem, 18vw, 9rem)", filter: "drop-shadow(0 0 32px rgba(255,215,0,0.5))" }}
+        >
+          {emoji}
+        </div>
       </div>
 
-      {/* Headline */}
-      <div className="space-y-3 text-center">
+      {/* Text */}
+      <div className="space-y-4 text-center">
         <h1
           className="text-4xl md:text-5xl font-extrabold uppercase tracking-tighter text-primary leading-tight"
-          style={{ textShadow: "0 0 40px currentColor" }}
+          style={{ textShadow: "0 0 48px currentColor" }}
         >
-          {message.current.headline}
+          {headline}
         </h1>
-        <p className="text-muted-foreground font-mono text-base text-center max-w-sm leading-relaxed">
-          {message.current.sub}
+        <p className="text-muted-foreground font-mono text-base max-w-sm mx-auto leading-relaxed">
+          {sub}
         </p>
-      </div>
-
-      {/* Stars row */}
-      <div className="flex gap-2 text-2xl animate-in fade-in duration-700 delay-300">
-        {["⭐", "⭐", "⭐", "⭐", "⭐"].map((s, i) => (
-          <span
-            key={i}
-            style={{
-              animationDelay: `${i * 120}ms`,
-              animationDuration: "0.5s",
-              animationFillMode: "both",
-            }}
-            className="animate-in zoom-in"
-          >
-            {s}
-          </span>
-        ))}
       </div>
 
       {/* Finish button */}
       <button
         onClick={onFinish}
         disabled={finishPending}
-        className="bg-primary text-primary-foreground px-10 py-5 rounded-xl font-bold uppercase tracking-widest shadow-[0_0_30px_rgba(57,255,20,0.4)] hover:shadow-[0_0_50px_rgba(57,255,20,0.6)] hover:scale-105 transition-all w-full md:w-auto disabled:opacity-60"
+        className="bg-primary text-primary-foreground px-10 py-5 rounded-xl font-bold uppercase tracking-widest shadow-[0_0_30px_rgba(57,255,20,0.4)] hover:shadow-[0_0_60px_rgba(57,255,20,0.7)] hover:scale-105 transition-all w-full md:w-auto disabled:opacity-60 text-lg"
       >
-        {finishPending ? "SAVING…" : finishLabel}
+        {finishPending ? "SAVING…" : "SEE MY STATS →"}
       </button>
     </div>
   );
