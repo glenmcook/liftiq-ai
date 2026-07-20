@@ -99,7 +99,7 @@ export default function Pricing() {
             <div className="flex items-center gap-3">
               <Crown className="w-5 h-5 text-primary" />
               <div>
-                <div className="font-bold text-primary uppercase tracking-wide text-sm">LiftIQ Pro — Active</div>
+                <div className="font-bold text-primary uppercase tracking-wide text-sm">LiftIQ AI Pro — Active</div>
                 {status.currentPeriodEnd && (
                   <div className="text-xs text-muted-foreground font-mono mt-0.5">
                     Renews {new Date(status.currentPeriodEnd * 1000).toLocaleDateString()}

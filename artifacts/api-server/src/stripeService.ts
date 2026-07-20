@@ -51,9 +51,9 @@ export class StripeService {
     let planName: string | null = null;
     try {
       const priceResult = await stripeStorage.getProduct((sub as any).items?.[0]?.price?.product ?? '');
-      planName = (priceResult as any)?.name ?? 'LiftIQ Pro';
+      planName = (priceResult as any)?.name ?? 'LiftIQ AI Pro';
     } catch {
-      planName = 'LiftIQ Pro';
+      planName = 'LiftIQ AI Pro';
     }
 
     return {

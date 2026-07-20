@@ -5,7 +5,7 @@ export function LiftIQMark({ className }: { className?: string }) {
       viewBox="0 0 40 40"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-label="LiftIQ"
+      aria-label="LiftIQ AI"
     >
       {/* Left plate */}
       <rect x="1" y="10" width="6" height="20" rx="3" fill="currentColor" />

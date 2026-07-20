@@ -83,7 +83,7 @@ export function WorkoutSummaryModal({ dayLabel, startedAt, completedAt, loggedSe
   const primaryColor = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim();
   const accentCss = `hsl(${primaryColor})`;
 
-  const shareText = `💪 Just crushed ${dayLabel} on LiftIQ!\n⏱ ${duration} · 📦 ${totalSets} sets · 🏋️ ${maxWeight.toLocaleString()} lbs top set${prs > 0 ? ` · 🏆 ${prs} PR${prs > 1 ? "s" : ""}` : ""}\n\nTrack yours → liftiq.app`;
+  const shareText = `💪 Just crushed ${dayLabel} on LiftIQ AI!\n⏱ ${duration} · 📦 ${totalSets} sets · 🏋️ ${maxWeight.toLocaleString()} lbs top set${prs > 0 ? ` · 🏆 ${prs} PR${prs > 1 ? "s" : ""}` : ""}\n\nTrack yours → liftiq.ai`;
 
   // Generate image once and cache it
   const getImage = useCallback(async (): Promise<string | null> => {
@@ -133,9 +133,9 @@ export function WorkoutSummaryModal({ dayLabel, startedAt, completedAt, loggedSe
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], "liftiq-workout.png", { type: "image/png" });
       if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], text: shareText, title: `${dayLabel} — LiftIQ` });
+        await navigator.share({ files: [file], text: shareText, title: `${dayLabel} — LiftIQ AI` });
       } else if (navigator.share) {
-        await navigator.share({ text: shareText, title: `${dayLabel} — LiftIQ` });
+        await navigator.share({ text: shareText, title: `${dayLabel} — LiftIQ AI` });
       }
     } catch { /* user cancelled */ }
   };
@@ -174,7 +174,7 @@ export function WorkoutSummaryModal({ dayLabel, startedAt, completedAt, loggedSe
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
                 <div style={{ color: accentCss, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", marginBottom: 4 }}>
-                  LIFTIQ · {formatDate(completedAt).toUpperCase()}
+                  LIFTIQ AI · {formatDate(completedAt).toUpperCase()}
                 </div>
                 <div style={{ color: "#f9f9f9", fontSize: 22, fontWeight: 900, letterSpacing: "-0.02em", textTransform: "uppercase" }}>
                   {dayLabel}
@@ -230,7 +230,7 @@ export function WorkoutSummaryModal({ dayLabel, startedAt, completedAt, loggedSe
 
           {/* Footer */}
           <div style={{ padding: "10px 24px 16px", borderTop: "1px solid #111" }}>
-            <span style={{ color: "#333", fontSize: 10, letterSpacing: "0.1em" }}>liftiq.app</span>
+            <span style={{ color: "#333", fontSize: 10, letterSpacing: "0.1em" }}>liftiq.ai</span>
           </div>
         </div>
 

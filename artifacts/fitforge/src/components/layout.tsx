@@ -10,7 +10,7 @@ function Wordmark({ size = "md" }: { size?: "sm" | "md" }) {
     <div className={`flex items-center gap-2.5 ${size === "sm" ? "gap-2" : ""}`}>
       <LiftIQMark className={`text-primary shrink-0 ${size === "sm" ? "w-7 h-7" : "w-9 h-9"}`} />
       <span className={`font-black tracking-widest uppercase ${size === "sm" ? "text-lg" : "text-xl"}`}>
-        <span className="text-foreground">LIFT</span><span className="text-primary">IQ</span>
+        <span className="text-foreground">LIFT</span><span className="text-primary">IQ AI</span>
       </span>
     </div>
   );
