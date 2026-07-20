@@ -1,0 +1,50 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "9FngkK0ecl5lmxSGfqmF9"
+uri = "file://docs/business/business-plan.md"
+type = "text"
+title = "Business Plan"
+
+[[outputs]]
+id = "7qFPfifP9ePliT81W7ZR7"
+uri = "file://docs/business/marketing-strategy.md"
+type = "text"
+title = "Marketing Strategy"
+
+[[outputs]]
+id = "WCCLLw50rMInym370tpK9"
+uri = "file://docs/business/pricing-menu.md"
+type = "text"
+title = "Product Menu & Pricing"
+
+[[outputs]]
+id = "edADDVWzfA07LMV8cLZiQ"
+uri = "file://docs/business/sales-forecast.md"
+type = "text"
+title = "Sales Forecast"
+
+[[outputs]]
+id = "zsRBxQWuLmVpwlvK-B36_"
+uri = "file://docs/business/business-plan.pdf"
+type = "pdf"
+title = "Business Plan"
+
+[[outputs]]
+id = "emeOkpN60YqV3lljILCGx"
+uri = "file://docs/business/marketing-strategy.pdf"
+type = "pdf"
+title = "Marketing Strategy"
+
+[[outputs]]
+id = "zwlvnLUBSto93FvhOLW_q"
+uri = "file://docs/business/pricing-menu.pdf"
+type = "pdf"
+title = "Product Menu & Pricing"
+
+[[outputs]]
+id = "anAFA6itOmJr6uOv9-zfk"
+uri = "file://docs/business/sales-forecast.pdf"
+type = "pdf"
+title = "Sales Forecast"
