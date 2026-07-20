@@ -116,8 +116,11 @@ export default function SessionScreen() {
     }
   };
 
+  // slotExerciseId is always the original prescribed exercise ID — used as the
+  // stable state key regardless of swaps.  The effective ID sent to the API
+  // is resolved here from the swaps map so the call site stays simple.
   const handleLogSet = async (
-    exerciseId: number,
+    slotExerciseId: number,
     setNumber: number,
     reps: string,
     weight: string
@@ -130,10 +133,12 @@ export default function SessionScreen() {
     }
     try {
       const parsedWeight = parseFloat(weight);
+      // Use the swapped exercise ID for the API call if one is active for this slot
+      const effectiveExerciseId = swaps[slotExerciseId]?.id ?? slotExerciseId;
       await logSet.mutateAsync({
         sessionId,
         data: {
-          exerciseId,
+          exerciseId: effectiveExerciseId,
           setNumber,
           actualReps: parsedReps,
           actualWeightLbs: Number.isFinite(parsedWeight) && parsedWeight > 0
@@ -141,7 +146,8 @@ export default function SessionScreen() {
             : undefined,
         },
       });
-      updateEntry(exerciseId, setNumber, { done: true });
+      // Always key done-state on the slot (original) exercise ID
+      updateEntry(slotExerciseId, setNumber, { done: true });
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {
       Alert.alert('Error', 'Could not log set.');
@@ -475,7 +481,7 @@ export default function SessionScreen() {
                         <Pressable
                           onPress={() =>
                             handleLogSet(
-                              swapped ? swapped.id : ex.exerciseId,
+                              ex.exerciseId,
                               ps.setNumber,
                               entry.reps,
                               entry.weight

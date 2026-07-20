@@ -25,6 +25,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: 'clock', selected: 'clock.fill' }} />
         <Label>History</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="progress">
+        <Icon sf={{ default: 'chart.line.uptrend.xyaxis', selected: 'chart.line.uptrend.xyaxis' }} />
+        <Label>Progress</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <Icon sf={{ default: 'person', selected: 'person.fill' }} />
         <Label>Profile</Label>
@@ -106,6 +110,18 @@ function ClassicTabLayout() {
               <SymbolView name="clock" tintColor={color} size={24} />
             ) : (
               <Feather name="clock" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="progress"
+        options={{
+          title: 'Progress',
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="chart.line.uptrend.xyaxis" tintColor={color} size={24} />
+            ) : (
+              <Feather name="trending-up" size={22} color={color} />
             ),
         }}
       />
