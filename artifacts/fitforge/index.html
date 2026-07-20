@@ -10,6 +10,36 @@
     <meta property="og:description" content="LiftIQ — AI-powered personal training. Build your plan, track your lifts, and get smarter every session." />
     <meta name="twitter:title" content="LiftIQ - Personal Training" />
     <meta name="twitter:description" content="LiftIQ — AI-powered personal training. Build your plan, track your lifts, and get smarter every session." />
+    <script>
+      // Runs synchronously before CSS is painted — prevents flash-of-wrong-theme.
+      // Must stay inline; cannot be a module because modules are deferred.
+      (function () {
+        var KEY = 'liftiq-theme';
+        // --background HSL values keyed by theme id (mirrors useTheme.ts THEMES)
+        var BG = {
+          'neon-green':         '0 0% 4%',
+          'cyber-blue':         '222 60% 4%',
+          'volcanic':           '30 60% 4%',
+          'purple-pulse':       '270 50% 4%',
+          'crimson':            '0 60% 4%',
+          'arctic':             '210 20% 96%',
+          'neon-green-light':   '111 20% 97%',
+          'cyber-blue-light':   '210 25% 97%',
+          'volcanic-light':     '38 30% 97%',
+          'purple-pulse-light': '270 20% 97%',
+          'crimson-light':      '0 20% 97%',
+          'arctic-light':       '210 20% 96%',
+        };
+        try {
+          var id = localStorage.getItem(KEY) || 'neon-green';
+          var bg = BG[id] || BG['neon-green'];
+          // Set the CSS variable so Tailwind bg-background resolves correctly.
+          document.documentElement.style.setProperty('--background', bg);
+          // Also paint html/body directly so the very first pixel is right.
+          document.documentElement.style.backgroundColor = 'hsl(' + bg + ')';
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
