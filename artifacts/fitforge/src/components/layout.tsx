@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Dumbbell, Home, LineChart, History, Activity, Sparkles, Settings, Star, BookOpen, Utensils, Crown } from "lucide-react";
+import { Dumbbell, Home, LineChart, History, Activity, Sparkles, Settings, Star, BookOpen, Utensils, Crown, FileText } from "lucide-react";
 import { LiftIQMark } from "./liftiq-logo";
 import { useQuery } from "@tanstack/react-query";
 
@@ -37,6 +37,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { href: "/diet", label: "Diet", icon: Utensils },
     { href: "/library", label: "Library", icon: BookOpen },
     { href: "/recommendations", label: "Arsenal", icon: Star },
+    { href: "/docs", label: "Docs", icon: FileText },
     { href: "/settings", label: "Settings", icon: Settings },
   ];
 
