@@ -1,1 +1,2 @@
 - [API client hook signatures](api-client-hooks.md) — orval-generated hooks use positional params (not pathParams/body); mutations use `{ data }` or `{ sessionId, data }`.
+- [Docs update rule](docs-update-rule.md) — docs/README.md + relevant doc file must be updated as part of every feature task before markTaskComplete.
