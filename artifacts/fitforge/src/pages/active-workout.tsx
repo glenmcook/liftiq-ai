@@ -94,6 +94,7 @@ export default function ActiveWorkout() {
   const [showSummary, setShowSummary] = useState(false);
   // swaps: originalExerciseId → replacement exercise object (session-only, never persisted)
   const [swaps, setSwaps] = useState<Record<number, any>>({});
+  const [showSwapModal, setShowSwapModal] = useState(false);
 
   if (loadingSession || loadingDay) {
      return <div className="min-h-screen bg-background text-primary flex items-center justify-center font-mono animate-pulse tracking-widest text-xl"><Loader2 className="w-8 h-8 animate-spin mr-3"/> LOADING COMBAT DATA...</div>;
@@ -108,7 +109,6 @@ export default function ActiveWorkout() {
   const effectiveExercise = swappedData
     ? { ...exercise, exerciseId: swappedData.id, exercise: swappedData }
     : exercise;
-  const [showSwapModal, setShowSwapModal] = useState(false);
 
   if (!exercise) {
     return (
