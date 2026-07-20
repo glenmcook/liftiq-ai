@@ -4,6 +4,7 @@ import { useGetSession, useLogSet, useUpdateSession, getGetSessionQueryKey, getG
 import { Timer } from "@/components/timer";
 import { ExerciseModal } from "@/components/exercise-modal";
 import { WorkoutSummaryModal } from "@/components/workout-summary-modal";
+import { WorkoutCelebration } from "@/components/workout-celebration";
 import { SwapExerciseModal } from "@/components/swap-exercise-modal";
 import { Check, ArrowRight, ArrowLeft, Loader2, Trophy, PlayCircle, ArrowRightLeft } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -112,22 +113,14 @@ export default function ActiveWorkout() {
   if (!exercise) {
     return (
       <>
-        <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-8 space-y-8 border-x border-border/30 max-w-2xl mx-auto shadow-2xl">
-          <Trophy className="w-24 h-24 text-primary drop-shadow-[0_0_30px_rgba(57,255,20,0.5)]" />
-          <h1 className="text-5xl font-extrabold uppercase tracking-tighter text-center">PROTOCOL COMPLETE</h1>
-          <p className="text-muted-foreground font-mono text-center text-lg max-w-md">All prescribed sets have been executed. Your evolution is logged.</p>
-          <button
-             onClick={async () => {
-               await updateSession.mutateAsync({ sessionId, data: { completedAt: new Date().toISOString() } });
-               queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
-               setShowSummary(true);
-             }}
-             disabled={updateSession.isPending}
-             className="bg-primary text-primary-foreground px-10 py-5 rounded-xl font-bold uppercase tracking-widest shadow-[0_0_30px_rgba(57,255,20,0.4)] hover:shadow-[0_0_50px_rgba(57,255,20,0.6)] hover:scale-105 transition-all w-full md:w-auto mt-8 disabled:opacity-60"
-          >
-             {updateSession.isPending ? "SAVING…" : "FINISH & RETURN"}
-          </button>
-        </div>
+        <WorkoutCelebration
+          finishPending={updateSession.isPending}
+          onFinish={async () => {
+            await updateSession.mutateAsync({ sessionId, data: { completedAt: new Date().toISOString() } });
+            queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+            setShowSummary(true);
+          }}
+        />
 
         {showSummary && (
           <WorkoutSummaryModal
