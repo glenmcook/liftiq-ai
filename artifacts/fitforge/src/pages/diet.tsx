@@ -5,6 +5,7 @@ import {
   Utensils, Loader2, RefreshCw, Settings2, X, ChevronDown, ChevronUp,
   Zap, Beef, Wheat, Droplets, Lightbulb, Clock
 } from "lucide-react";
+import { customFetch } from "@workspace/api-client-react";
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -109,13 +110,13 @@ export default function Diet() {
 
   const { data: prefs } = useQuery<Prefs>({
     queryKey: ["/api/diet/preferences"],
-    queryFn: () => fetch(`${BASE}api/diet/preferences`).then(r => r.json()),
+    queryFn: () => customFetch<Prefs>(`${BASE}api/diet/preferences`),
   });
 
   const [forceRefresh, setForceRefresh] = useState(false);
   const { data: recs, isLoading, isFetching, refetch } = useQuery<Recommendations>({
     queryKey: ["/api/diet/recommendations"],
-    queryFn: () => fetch(`${BASE}api/diet/recommendations${forceRefresh ? "?refresh=true" : ""}`).then(r => r.json()),
+    queryFn: () => customFetch<Recommendations>(`${BASE}api/diet/recommendations${forceRefresh ? "?refresh=true" : ""}`),
     staleTime: Infinity,
   });
 
@@ -126,11 +127,10 @@ export default function Diet() {
 
   const savePrefs = useMutation({
     mutationFn: (data: Partial<Prefs>) =>
-      fetch(`${BASE}api/diet/preferences`, {
+      customFetch(`${BASE}api/diet/preferences`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }).then(r => r.json()),
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/diet/preferences"] });
       qc.invalidateQueries({ queryKey: ["/api/diet/recommendations"] });

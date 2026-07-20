@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Crown, X } from "lucide-react";
 import { Link } from "wouter";
+import { customFetch } from "@workspace/api-client-react";
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -16,7 +17,7 @@ export function TrialBanner() {
 
   const { data: status } = useQuery<StripeStatus>({
     queryKey: ["/api/stripe/status"],
-    queryFn: () => fetch(`${BASE}api/stripe/status`).then((r) => r.json()),
+    queryFn: () => customFetch<StripeStatus>(`${BASE}api/stripe/status`),
     staleTime: 5 * 60 * 1000,
   });
 

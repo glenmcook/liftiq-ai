@@ -1,7 +1,64 @@
 # API Reference
 
 Base URL (development): `http://localhost:5000/api`  
-All endpoints return JSON. Authentication is session-cookie based; the session is established via the Replit Auth / OpenID Connect flow.
+All endpoints return JSON.
+
+---
+
+## Authentication
+
+All `/api/*` routes require authentication **except**:
+
+| Path | Why it's public |
+|---|---|
+| `GET /api/healthz` | Public health check |
+| `POST /api/auth/login` | Must be reachable before a session exists |
+| `GET /api/auth/check` | Must be reachable before a session exists |
+| `POST /api/stripe/webhook` | Protected by Stripe signature verification |
+
+### `POST /api/auth/login`
+Authenticates the caller with the server-side password (`ADMIN_PASSWORD` secret).
+
+**Body**
+```json
+{ "password": "..." }
+```
+
+**Response (200)**  
+Web callers receive an `httpOnly` session cookie automatically. Mobile callers additionally receive an opaque bearer token:
+```json
+{ "ok": true, "token": "<opaque>" }
+```
+
+**Errors**: `401 Incorrect password`, `400 Password is required`, `503 Authentication is not configured`
+
+---
+
+### `GET /api/auth/check`
+Returns whether the current session/token is authenticated.
+
+**Response**
+```json
+{ "authenticated": true }
+```
+
+---
+
+### `POST /api/auth/logout`
+Clears the caller's session cookie (web) and revokes the caller's bearer token (mobile). **Requires authentication** — unauthenticated callers receive 401. Only the calling client's token is revoked; other active sessions are left intact.
+
+**Response**: `204 No Content`
+
+---
+
+### Sending the bearer token (mobile)
+Mobile clients should store the token returned by `/api/auth/login` in AsyncStorage and supply it on every request via the `Authorization` header:
+
+```
+Authorization: Bearer <token>
+```
+
+The `setAuthTokenGetter` helper from `@workspace/api-client-react` wires this automatically into `customFetch`.
 
 ---
 

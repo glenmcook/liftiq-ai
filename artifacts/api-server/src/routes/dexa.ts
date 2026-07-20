@@ -3,6 +3,7 @@ import { desc } from "drizzle-orm";
 import { db, dexaScansTable } from "@workspace/db";
 import multer from "multer";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { aiRateLimit } from "../middlewares/aiRateLimit";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { mkdtemp, readdir, readFile, rm, writeFile } from "fs/promises";
@@ -41,7 +42,7 @@ router.get("/dexa-scans", async (_req, res): Promise<void> => {
   res.json(ListDexaScansResponse.parse(result));
 });
 
-router.post("/dexa-scans/parse", upload.single("file"), async (req, res): Promise<void> => {
+router.post("/dexa-scans/parse", upload.single("file"), aiRateLimit, async (req, res): Promise<void> => {
   if (!req.file) {
     res.status(400).json({ error: "No file uploaded." });
     return;

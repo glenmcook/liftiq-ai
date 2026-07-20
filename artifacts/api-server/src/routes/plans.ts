@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, desc } from "drizzle-orm";
+import { aiRateLimit } from "../middlewares/aiRateLimit";
 import {
   db,
   workoutPlansTable,
@@ -104,7 +105,7 @@ router.get("/plans/:planId", async (req, res): Promise<void> => {
   res.json(GetPlanResponse.parse(detail));
 });
 
-router.post("/plans/generate", async (req, res): Promise<void> => {
+router.post("/plans/generate", aiRateLimit, async (req, res): Promise<void> => {
   const [profile] = await db.select().from(userProfilesTable).limit(1);
 
   let planSpec: {

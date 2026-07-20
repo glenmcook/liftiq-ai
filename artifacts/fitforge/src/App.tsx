@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { Route, Switch, Router as WouterRouter } from 'wouter';
 import Dashboard from './pages/dashboard';
 import Onboarding from './pages/onboarding';
@@ -16,6 +16,9 @@ import Diet from './pages/diet';
 import Pricing from './pages/pricing';
 import CheckoutSuccess from './pages/checkout-success';
 import Docs from './pages/docs';
+import Login from './pages/login';
+
+const BASE = import.meta.env.BASE_URL;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,11 +58,46 @@ function Router() {
   );
 }
 
+/**
+ * Wraps the app in an auth gate.  On first load it checks the session with
+ * the API; if not authenticated it shows the Login page.  Once the user logs
+ * in, the query is invalidated and the main app renders.
+ */
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const { data, isLoading } = useQuery<{ authenticated: boolean }>({
+    queryKey: ["auth-check"],
+    queryFn: async () => {
+      const res = await fetch(`${BASE}api/auth/check`, {
+        credentials: "same-origin",
+      });
+      if (!res.ok) return { authenticated: false };
+      return res.json();
+    },
+    // Re-check every 5 minutes in case the session expires
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+  });
+
+  if (isLoading) {
+    // Brief blank screen while checking auth — avoids any flash of the login page
+    // for already-authenticated sessions
+    return null;
+  }
+
+  if (!data?.authenticated) {
+    return <Login />;
+  }
+
+  return <>{children}</>;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-        <Router />
+        <AuthGate>
+          <Router />
+        </AuthGate>
       </WouterRouter>
     </QueryClientProvider>
   );

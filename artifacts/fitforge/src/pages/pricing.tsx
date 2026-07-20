@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Layout } from "@/components/layout";
 import { Check, Zap, Loader2, Crown, Lock } from "lucide-react";
+import { customFetch } from "@workspace/api-client-react";
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -43,38 +44,29 @@ export default function Pricing() {
 
   const { data: status, isLoading: statusLoading } = useQuery<SubscriptionStatus>({
     queryKey: ["/api/stripe/status"],
-    queryFn: () => fetch(`${BASE}api/stripe/status`).then(r => r.json()),
+    queryFn: () => customFetch<SubscriptionStatus>(`${BASE}api/stripe/status`),
   });
 
   const { data: productsData, isLoading: productsLoading } = useQuery<{ data: Product[] }>({
     queryKey: ["/api/stripe/products"],
-    queryFn: () => fetch(`${BASE}api/stripe/products`).then(r => r.json()),
+    queryFn: () => customFetch<{ data: Product[] }>(`${BASE}api/stripe/products`),
   });
 
   const checkout = useMutation({
-    mutationFn: async (priceId: string) => {
-      const res = await fetch(`${BASE}api/stripe/checkout`, {
+    mutationFn: (priceId: string) =>
+      customFetch<{ url: string }>(`${BASE}api/stripe/checkout`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ priceId, email }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Checkout failed");
-      return data;
-    },
-    onSuccess: (data) => {
+      }),
+    onSuccess: (data: { url: string }) => {
       if (data.url) window.location.href = data.url;
     },
   });
 
   const portal = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`${BASE}api/stripe/portal`, { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Portal failed");
-      return data;
-    },
-    onSuccess: (data) => {
+    mutationFn: () =>
+      customFetch<{ url: string }>(`${BASE}api/stripe/portal`, { method: "POST" }),
+    onSuccess: (data: { url: string }) => {
       if (data.url) window.location.href = data.url;
     },
   });

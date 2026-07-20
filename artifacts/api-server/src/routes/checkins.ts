@@ -3,6 +3,7 @@ import { desc, eq } from "drizzle-orm";
 import { db, checkinsTable, userProfilesTable, workoutSessionsTable, dexaScansTable, workoutDaysTable } from "@workspace/db";
 import { CreateCheckinBody, CreateCheckinResponse, ListCheckinsResponse } from "@workspace/api-zod";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { aiRateLimit } from "../middlewares/aiRateLimit";
 
 const router: IRouter = Router();
 
@@ -24,7 +25,7 @@ router.get("/checkins", async (_req, res): Promise<void> => {
   res.json(ListCheckinsResponse.parse(result));
 });
 
-router.post("/checkins", async (req, res): Promise<void> => {
+router.post("/checkins", aiRateLimit, async (req, res): Promise<void> => {
   const body = CreateCheckinBody.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: body.error.message });

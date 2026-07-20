@@ -49,9 +49,11 @@ async function registerForPushNotifications() {
 
   try {
     const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
-    await fetch(`${BASE_URL}/api/push/token`, {
+    // The auth token is managed by setAuthTokenGetter in _layout.tsx;
+    // use customFetch so the Authorization header is attached automatically.
+    const { customFetch } = await import('@workspace/api-client-react');
+    await customFetch(`${BASE_URL}/api/push/token`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token }),
     });
   } catch (err) {

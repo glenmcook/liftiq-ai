@@ -1,11 +1,22 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
+import session from "express-session";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { WebhookHandlers } from "./webhookHandlers";
+import { requireSession } from "./middlewares/requireSession";
+
+if (!process.env.SESSION_SECRET) {
+  throw new Error("SESSION_SECRET environment variable is required but was not set.");
+}
 
 const app: Express = express();
+
+// ─── Trust the Replit reverse proxy ──────────────────────────────────────────
+// Required so that req.ip is correctly resolved from X-Forwarded-For and
+// so that secure session cookies work behind the HTTPS proxy.
+app.set("trust proxy", 1);
 
 app.use(
   pinoHttp({
@@ -28,6 +39,8 @@ app.use(
 );
 
 // ─── Stripe webhook MUST come before express.json() ──────────────────────────
+// This route is verified by Stripe's own signature check and deliberately
+// does NOT go through the session authentication middleware below.
 app.post(
   "/api/stripe/webhook",
   express.raw({ type: "application/json" }),
@@ -51,6 +64,31 @@ app.post(
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ─── Session middleware ───────────────────────────────────────────────────────
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET!,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      // `secure: true` is safe here: Replit always terminates HTTPS at the
+      // reverse proxy and we've enabled `trust proxy` above.
+      secure: true,
+      sameSite: "lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    },
+  })
+);
+
+// ─── Authentication ───────────────────────────────────────────────────────────
+// Applies to all /api routes.  Exemptions (handled inside the middleware):
+//   /api/healthz          — public health check
+//   /api/auth/*           — login / logout / check (must be reachable unauthenticated)
+// The Stripe webhook above is registered before this middleware and is
+// protected by Stripe's own signature verification.
+app.use("/api", requireSession);
 
 app.use("/api", router);
 

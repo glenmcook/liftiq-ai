@@ -1,6 +1,12 @@
 # Web App — LiftIQ AI
 
-The web app (`artifacts/fitforge`) is a React + Vite single-page application. All routes are client-side; Wouter handles routing. Authentication is session-based via the API server.
+The web app (`artifacts/fitforge`) is a React + Vite single-page application. All routes are client-side; Wouter handles routing.
+
+## Authentication
+
+On startup `App.tsx` calls `GET /api/auth/check`. If the response is `{ authenticated: false }` the `<AuthGate>` component renders the **Login** page instead of the main app; once the user successfully logs in the check is re-fetched and the app renders.
+
+The browser session is managed via an `httpOnly` secure cookie set by `POST /api/auth/login` — no credentials are stored in JavaScript or the JS bundle. The session is re-checked every 5 minutes; on expiry the user is redirected back to the login screen automatically.
 
 ---
 

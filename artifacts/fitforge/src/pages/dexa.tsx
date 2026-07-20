@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useListDexaScans, useCreateDexaScan, getListDexaScansQueryKey } from "@workspace/api-client-react";
+import { useListDexaScans, useCreateDexaScan, getListDexaScansQueryKey, customFetch } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Plus, Activity, Loader2, Upload, FileText, X, CheckCircle, ChevronDown, ChevronUp, ShieldCheck, MapPin, ArrowRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -85,9 +85,10 @@ export default function Dexa() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch(`${import.meta.env.BASE_URL}api/dexa-scans/parse`, { method: "POST", body: fd });
-      if (!res.ok) throw new Error((await res.json()).error ?? "Parse failed");
-      const data: ParsedDexa = await res.json();
+      const data = await customFetch<ParsedDexa>(`${import.meta.env.BASE_URL}api/dexa-scans/parse`, {
+        method: "POST",
+        body: fd,
+      });
       setFormData(data);
       setParsed(true);
     } catch (err: any) {

@@ -2,6 +2,10 @@
 
 The mobile app (`artifacts/fitforge-mobile`) is an Expo React Native application using Expo Router for file-based navigation. It targets iOS and Android and shares the same API server as the web app.
 
+## Authentication
+
+On launch `_layout.tsx` reads an opaque auth token from AsyncStorage (`@fitforge/auth_token`). If a token is present it is supplied to `setAuthTokenGetter` so `customFetch` attaches `Authorization: Bearer <token>` to every request, then the main tab navigator is shown. If no token is found, a full-screen **Login** screen is displayed; on successful login the token is persisted to AsyncStorage for future launches. Tokens are invalidated server-side on logout.
+
 ---
 
 ## Tab screens

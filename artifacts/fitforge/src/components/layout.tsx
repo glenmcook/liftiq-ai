@@ -3,6 +3,7 @@ import { Dumbbell, Home, LineChart, History, Activity, Sparkles, Settings, Star,
 import { LiftIQMark } from "./liftiq-logo";
 import { useQuery } from "@tanstack/react-query";
 import { TrialBanner } from "./trial-banner";
+import { customFetch } from "@workspace/api-client-react";
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -22,7 +23,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const { data: subStatus } = useQuery<{ isActive: boolean }>({
     queryKey: ["/api/stripe/status"],
-    queryFn: () => fetch(`${BASE}api/stripe/status`).then(r => r.json()),
+    queryFn: () => customFetch<{ isActive: boolean }>(`${BASE}api/stripe/status`),
     staleTime: 5 * 60 * 1000,
   });
 

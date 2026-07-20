@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, userProfilesTable, dietProfilesTable, dietRecommendationsTable } from "@workspace/db";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { aiRateLimit } from "../middlewares/aiRateLimit";
 
 const router: IRouter = Router();
 
@@ -81,7 +82,7 @@ router.post("/diet/preferences", async (req, res): Promise<void> => {
 
 // ─── GET /diet/recommendations ───────────────────────────────────────────────
 
-router.get("/diet/recommendations", async (req, res): Promise<void> => {
+router.get("/diet/recommendations", aiRateLimit, async (req, res): Promise<void> => {
   const refresh = req.query.refresh === "true";
 
   // Serve from cache unless forced refresh
