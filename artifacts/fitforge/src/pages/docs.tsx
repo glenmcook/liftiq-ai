@@ -293,12 +293,11 @@ function Subscription() {
           <div className="font-bold text-foreground mb-4">Free</div>
           <ul className="space-y-2.5 text-sm">
             {[
-              "Workout logging (unlimited)",
-              "Full exercise library",
+              "Dashboard & command center",
+              "Up to 3 workout sessions / month",
+              "Limited exercise library (50 exercises)",
               "Workout history",
               "Strength progress charts",
-              "DEXA scan uploading & parsing",
-              "Workout sharing",
             ].map(f => (
               <li key={f} className="flex items-start gap-2 text-muted-foreground">
                 <CheckCircle2 className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
@@ -315,9 +314,14 @@ function Subscription() {
           <ul className="space-y-2.5 text-sm">
             {[
               "Everything in Free",
+              "Unlimited workout logging",
+              "Full exercise library (500+ exercises)",
+              "DEXA scan uploading & AI parsing",
               "AI training plan generation",
               "AI check-in coaching",
               "AI 7-day diet plan",
+              "Unlimited plan regeneration",
+              "Arsenal AI recommendations",
             ].map(f => (
               <li key={f} className="flex items-start gap-2 text-foreground">
                 <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />

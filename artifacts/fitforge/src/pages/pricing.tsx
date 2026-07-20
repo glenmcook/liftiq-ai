@@ -14,18 +14,20 @@ type SubscriptionStatus = {
 
 const FREE_FEATURES = [
   "Dashboard & command center",
+  "Up to 3 workout sessions / month",
+  "Limited exercise library (50 exercises)",
   "Session history & logs",
   "Progress charts",
-  "Exercise library",
-  "Manual workout logging",
 ];
 
 const PRO_FEATURES = [
   "Everything in Free",
+  "Unlimited workout logging",
+  "Full exercise library (500+ exercises)",
+  "DEXA scan uploading & AI parsing",
   "AI training plan generation",
   "AI check-in & readiness scoring",
   "Nutrition fuel protocol (AI diet)",
-  "DEXA scan AI parsing",
   "Unlimited plan regeneration",
   "Arsenal AI recommendations",
 ];
