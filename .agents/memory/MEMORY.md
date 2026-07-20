@@ -1,0 +1,1 @@
+- [API client hook signatures](api-client-hooks.md) — orval-generated hooks use positional params (not pathParams/body); mutations use `{ data }` or `{ sessionId, data }`.

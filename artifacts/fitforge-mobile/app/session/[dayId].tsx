@@ -1,0 +1,745 @@
+import React, { useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  Platform,
+} from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
+import { useColors } from '@/hooks/useColors';
+import {
+  useGetWorkoutDay,
+  useCreateSession,
+  useLogSet,
+  useUpdateSession,
+} from '@workspace/api-client-react';
+
+interface LogEntry {
+  exerciseId: number;
+  setNumber: number;
+  reps: string;
+  weight: string;
+  done: boolean;
+}
+
+export default function SessionScreen() {
+  const { dayId } = useLocalSearchParams<{ dayId: string }>();
+  const colors = useColors();
+
+  const { data: day, isLoading, isError } = useGetWorkoutDay(
+    parseInt(dayId ?? '0')
+  );
+
+  const createSession = useCreateSession();
+  const logSet = useLogSet();
+  const updateSession = useUpdateSession();
+
+  const [sessionId, setSessionId] = useState<number | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [finishing, setFinishing] = useState(false);
+  const [logEntries, setLogEntries] = useState<Record<string, LogEntry>>({});
+
+  const entryKey = (exerciseId: number, setNumber: number) =>
+    `${exerciseId}-${setNumber}`;
+
+  const getEntry = (
+    exerciseId: number,
+    setNumber: number,
+    defaultReps: number,
+    defaultWeight?: number | null
+  ): LogEntry => {
+    const key = entryKey(exerciseId, setNumber);
+    return (
+      logEntries[key] ?? {
+        exerciseId,
+        setNumber,
+        reps: String(defaultReps),
+        weight: String(defaultWeight ?? ''),
+        done: false,
+      }
+    );
+  };
+
+  const updateEntry = (
+    exerciseId: number,
+    setNumber: number,
+    patch: Partial<LogEntry>,
+    defaultReps = 0,
+    defaultWeight: number | null = null
+  ) => {
+    const key = entryKey(exerciseId, setNumber);
+    setLogEntries((prev) => {
+      const existing: LogEntry = prev[key] ?? {
+        exerciseId,
+        setNumber,
+        reps: String(defaultReps),
+        weight: defaultWeight != null ? String(defaultWeight) : '',
+        done: false,
+      };
+      return { ...prev, [key]: { ...existing, ...patch } };
+    });
+  };
+
+  const handleStart = async () => {
+    if (!day) return;
+    setStarting(true);
+    try {
+      const session = await createSession.mutateAsync({
+        data: { dayId: day.id },
+      });
+      setSessionId(session.id);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {
+      Alert.alert('Error', 'Could not start session. Please try again.');
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  const handleLogSet = async (
+    exerciseId: number,
+    setNumber: number,
+    reps: string,
+    weight: string
+  ) => {
+    if (!sessionId) return;
+    const parsedReps = parseInt(reps);
+    if (!parsedReps || parsedReps <= 0) {
+      Alert.alert('Enter reps', 'Please enter a valid number of reps before logging this set.');
+      return;
+    }
+    try {
+      const parsedWeight = parseFloat(weight);
+      await logSet.mutateAsync({
+        sessionId,
+        data: {
+          exerciseId,
+          setNumber,
+          actualReps: parsedReps,
+          actualWeightLbs: Number.isFinite(parsedWeight) && parsedWeight > 0
+            ? parsedWeight
+            : undefined,
+        },
+      });
+      updateEntry(exerciseId, setNumber, { done: true });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {
+      Alert.alert('Error', 'Could not log set.');
+    }
+  };
+
+  const handleFinish = async () => {
+    if (!sessionId) return;
+    Alert.alert('Finish Workout?', 'Mark this session as complete?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Finish',
+        onPress: async () => {
+          setFinishing(true);
+          try {
+            await updateSession.mutateAsync({
+              sessionId,
+              data: { completedAt: new Date().toISOString() },
+            });
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Alert.alert('Great work! 💪', 'Workout completed!', [
+              { text: 'Done', onPress: () => router.replace('/(tabs)/history') },
+            ]);
+          } catch {
+            Alert.alert('Error', 'Could not finish session.');
+            setFinishing(false);
+          }
+        },
+      },
+    ]);
+  };
+
+  if (isLoading) {
+    return (
+      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+        <ActivityIndicator color={colors.primary} size="large" />
+      </View>
+    );
+  }
+
+  if (isError || !day) {
+    return (
+      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+        <Feather name="alert-circle" size={36} color={colors.mutedForeground} />
+        <Text style={[styles.errorText, { color: colors.mutedForeground }]}>
+          Could not load workout
+        </Text>
+      </View>
+    );
+  }
+
+  const allDone = Object.values(logEntries).every((e) => e.done);
+  const doneSets = Object.values(logEntries).filter((e) => e.done).length;
+  const totalSets = day.exerciseGroups.reduce(
+    (acc, g) =>
+      acc +
+      g.exercises.reduce((ea, ex) => ea + ex.prescribedSets.length, 0),
+    0
+  );
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: Platform.OS === 'web' ? 100 : 120 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Day header */}
+        <View
+          style={[
+            styles.dayHeader,
+            { backgroundColor: colors.card, borderColor: colors.cardBorder },
+          ]}
+        >
+          <View>
+            <Text style={[styles.dayLabel, { color: colors.foreground }]}>
+              {day.label}
+            </Text>
+            <Text style={[styles.dayMeta, { color: colors.mutedForeground }]}>
+              Day {day.dayNumber} · Rest {Math.round(day.restSeconds / 60)}m between sets
+            </Text>
+          </View>
+          {sessionId && (
+            <View style={styles.progressInfo}>
+              <Text style={[styles.progressNum, { color: colors.primary }]}>
+                {doneSets}/{totalSets}
+              </Text>
+              <Text
+                style={[styles.progressLbl, { color: colors.mutedForeground }]}
+              >
+                sets
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Exercise groups */}
+        {day.exerciseGroups.map((group) => (
+          <View key={group.groupName} style={styles.groupSection}>
+            <View style={styles.groupHeader}>
+              <Text
+                style={[styles.groupName, { color: colors.mutedForeground }]}
+              >
+                {group.groupName.toUpperCase()}
+              </Text>
+              {group.pickOne && (
+                <View
+                  style={[
+                    styles.pickOneBadge,
+                    { backgroundColor: colors.accent },
+                  ]}
+                >
+                  <Text
+                    style={[styles.pickOneText, { color: colors.primary }]}
+                  >
+                    Pick one
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {group.exercises.map((ex) => (
+              <View
+                key={ex.id}
+                style={[
+                  styles.exerciseCard,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: colors.cardBorder,
+                  },
+                ]}
+              >
+                <View style={styles.exerciseHeader}>
+                  <View style={styles.exerciseTitleRow}>
+                    <Text
+                      style={[
+                        styles.exerciseName,
+                        { color: colors.foreground },
+                      ]}
+                    >
+                      {ex.exercise.name}
+                    </Text>
+                    <View
+                      style={[
+                        styles.muscleBadge,
+                        { backgroundColor: colors.muted },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.muscleText,
+                          { color: colors.mutedForeground },
+                        ]}
+                      >
+                        {ex.exercise.muscleGroup}
+                      </Text>
+                    </View>
+                  </View>
+                  {ex.exercise.equipment && (
+                    <Text
+                      style={[
+                        styles.equipment,
+                        { color: colors.mutedForeground },
+                      ]}
+                    >
+                      <Feather name="package" size={11} />{' '}
+                      {ex.exercise.equipment}
+                    </Text>
+                  )}
+                </View>
+
+                {/* Set rows */}
+                <View style={styles.setsContainer}>
+                  <View style={styles.setsHeader}>
+                    <Text
+                      style={[
+                        styles.setColHeader,
+                        { color: colors.mutedForeground, width: 32 },
+                      ]}
+                    >
+                      Set
+                    </Text>
+                    <Text
+                      style={[
+                        styles.setColHeader,
+                        { color: colors.mutedForeground, flex: 1 },
+                      ]}
+                    >
+                      Target
+                    </Text>
+                    <Text
+                      style={[
+                        styles.setColHeader,
+                        { color: colors.mutedForeground, width: 64 },
+                      ]}
+                    >
+                      Reps
+                    </Text>
+                    <Text
+                      style={[
+                        styles.setColHeader,
+                        { color: colors.mutedForeground, width: 64 },
+                      ]}
+                    >
+                      lbs
+                    </Text>
+                    <View style={{ width: 36 }} />
+                  </View>
+
+                  {ex.prescribedSets.map((ps) => {
+                    const entry = getEntry(
+                      ex.exerciseId,
+                      ps.setNumber,
+                      ps.targetRepsMin,
+                      ps.targetWeightLbs
+                    );
+                    const isDone = entry.done;
+
+                    return (
+                      <View
+                        key={ps.id}
+                        style={[
+                          styles.setRow,
+                          isDone && {
+                            backgroundColor: colors.primary + '10',
+                            borderRadius: 8,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.setNum,
+                            { color: colors.mutedForeground, width: 32 },
+                          ]}
+                        >
+                          {ps.setNumber}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.targetText,
+                            { color: colors.mutedForeground, flex: 1 },
+                          ]}
+                        >
+                          {ps.targetRepsMin}–{ps.targetRepsMax} reps
+                          {ps.targetWeightLbs
+                            ? ` @ ${ps.targetWeightLbs}lbs`
+                            : ''}
+                        </Text>
+                        <TextInput
+                          value={entry.reps}
+                          onChangeText={(v) =>
+                            updateEntry(
+                              ex.exerciseId,
+                              ps.setNumber,
+                              { reps: v },
+                              ps.targetRepsMin,
+                              ps.targetWeightLbs ?? null
+                            )
+                          }
+                          keyboardType="numeric"
+                          editable={!!sessionId && !isDone}
+                          style={[
+                            styles.setInput,
+                            {
+                              color: colors.foreground,
+                              borderColor: isDone
+                                ? colors.primary
+                                : colors.border,
+                              backgroundColor: colors.background,
+                              width: 56,
+                            },
+                          ]}
+                          placeholder={String(ps.targetRepsMin)}
+                          placeholderTextColor={colors.mutedForeground}
+                        />
+                        <TextInput
+                          value={entry.weight}
+                          onChangeText={(v) =>
+                            updateEntry(
+                              ex.exerciseId,
+                              ps.setNumber,
+                              { weight: v },
+                              ps.targetRepsMin,
+                              ps.targetWeightLbs ?? null
+                            )
+                          }
+                          keyboardType="decimal-pad"
+                          editable={!!sessionId && !isDone}
+                          style={[
+                            styles.setInput,
+                            {
+                              color: colors.foreground,
+                              borderColor: isDone
+                                ? colors.primary
+                                : colors.border,
+                              backgroundColor: colors.background,
+                              width: 56,
+                            },
+                          ]}
+                          placeholder={
+                            ps.targetWeightLbs
+                              ? String(ps.targetWeightLbs)
+                              : '—'
+                          }
+                          placeholderTextColor={colors.mutedForeground}
+                        />
+                        <Pressable
+                          onPress={() =>
+                            handleLogSet(
+                              ex.exerciseId,
+                              ps.setNumber,
+                              entry.reps,
+                              entry.weight
+                            )
+                          }
+                          disabled={!sessionId || isDone}
+                          style={({ pressed }) => [
+                            styles.doneBtn,
+                            {
+                              backgroundColor: isDone
+                                ? colors.primary
+                                : colors.muted,
+                              opacity:
+                                (!sessionId || isDone) && !isDone ? 0.5 : pressed ? 0.8 : 1,
+                            },
+                          ]}
+                        >
+                          <Feather
+                            name="check"
+                            size={16}
+                            color={
+                              isDone
+                                ? colors.primaryForeground
+                                : colors.mutedForeground
+                            }
+                          />
+                        </Pressable>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            ))}
+          </View>
+        ))}
+      </ScrollView>
+
+      {/* Fixed bottom button */}
+      <View
+        style={[
+          styles.bottomBar,
+          {
+            backgroundColor: colors.background,
+            borderTopColor: colors.border,
+            paddingBottom:
+              Platform.OS === 'web' ? 34 : 24,
+          },
+        ]}
+      >
+        {!sessionId ? (
+          <Pressable
+            onPress={handleStart}
+            disabled={starting}
+            style={({ pressed }) => [
+              styles.actionBtn,
+              {
+                backgroundColor: colors.primary,
+                opacity: pressed ? 0.85 : 1,
+              },
+            ]}
+          >
+            {starting ? (
+              <ActivityIndicator color={colors.primaryForeground} />
+            ) : (
+              <>
+                <Feather
+                  name="play"
+                  size={18}
+                  color={colors.primaryForeground}
+                />
+                <Text
+                  style={[
+                    styles.actionBtnText,
+                    { color: colors.primaryForeground },
+                  ]}
+                >
+                  Start Workout
+                </Text>
+              </>
+            )}
+          </Pressable>
+        ) : (
+          <Pressable
+            onPress={handleFinish}
+            disabled={finishing}
+            style={({ pressed }) => [
+              styles.actionBtn,
+              {
+                backgroundColor: colors.primary,
+                opacity: pressed ? 0.85 : 1,
+              },
+            ]}
+          >
+            {finishing ? (
+              <ActivityIndicator color={colors.primaryForeground} />
+            ) : (
+              <>
+                <Feather
+                  name="flag"
+                  size={18}
+                  color={colors.primaryForeground}
+                />
+                <Text
+                  style={[
+                    styles.actionBtnText,
+                    { color: colors.primaryForeground },
+                  ]}
+                >
+                  Finish Workout
+                </Text>
+              </>
+            )}
+          </Pressable>
+        )}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  errorText: {
+    fontSize: 15,
+    fontFamily: 'Inter_400Regular',
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    gap: 0,
+  },
+  dayHeader: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dayLabel: {
+    fontSize: 18,
+    fontFamily: 'Inter_700Bold',
+    fontWeight: '700' as const,
+  },
+  dayMeta: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+    marginTop: 2,
+  },
+  progressInfo: {
+    alignItems: 'center',
+  },
+  progressNum: {
+    fontSize: 22,
+    fontFamily: 'Inter_700Bold',
+    fontWeight: '700' as const,
+  },
+  progressLbl: {
+    fontSize: 10,
+    fontFamily: 'Inter_400Regular',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  groupSection: {
+    marginBottom: 16,
+  },
+  groupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  groupName: {
+    fontSize: 10,
+    fontFamily: 'Inter_600SemiBold',
+    fontWeight: '600' as const,
+    letterSpacing: 1,
+  },
+  pickOneBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  pickOneText: {
+    fontSize: 10,
+    fontFamily: 'Inter_500Medium',
+    fontWeight: '500' as const,
+  },
+  exerciseCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 8,
+  },
+  exerciseHeader: {
+    marginBottom: 10,
+  },
+  exerciseTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  exerciseName: {
+    fontSize: 15,
+    fontFamily: 'Inter_600SemiBold',
+    fontWeight: '600' as const,
+    flex: 1,
+  },
+  muscleBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  muscleText: {
+    fontSize: 10,
+    fontFamily: 'Inter_500Medium',
+    fontWeight: '500' as const,
+    textTransform: 'capitalize',
+  },
+  equipment: {
+    fontSize: 11,
+    fontFamily: 'Inter_400Regular',
+    marginTop: 3,
+  },
+  setsContainer: {
+    gap: 6,
+  },
+  setsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    marginBottom: 2,
+  },
+  setColHeader: {
+    fontSize: 10,
+    fontFamily: 'Inter_500Medium',
+    fontWeight: '500' as const,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  setRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+  },
+  setNum: {
+    fontSize: 13,
+    fontFamily: 'Inter_600SemiBold',
+    fontWeight: '600' as const,
+    textAlign: 'center',
+  },
+  targetText: {
+    fontSize: 11,
+    fontFamily: 'Inter_400Regular',
+  },
+  setInput: {
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 6,
+    fontSize: 14,
+    fontFamily: 'Inter_500Medium',
+    textAlign: 'center',
+  },
+  doneBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    borderTopWidth: 1,
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  actionBtnText: {
+    fontSize: 16,
+    fontFamily: 'Inter_700Bold',
+    fontWeight: '700' as const,
+  },
+});

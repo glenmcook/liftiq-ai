@@ -29,7 +29,7 @@ function IconInstagram() {
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface LoggedSet {
   exerciseName: string;
-  actualWeightLbs: number | null;
+  actualWeightLbs?: number | null;
   actualReps: number;
   isPersonalRecord: boolean;
 }
