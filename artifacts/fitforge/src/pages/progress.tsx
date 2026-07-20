@@ -37,17 +37,22 @@ export default function Progress() {
           <div className="h-[400px] w-full relative z-10">
             {loadingWeight ? (
               <div className="w-full h-full flex items-center justify-center animate-pulse font-mono text-primary tracking-widest">CALCULATING VECTOR...</div>
-            ) : weightData && weightData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={weightData} margin={{ top: 20, right: 20, left: 0, bottom: 20 }}>
-                  <XAxis dataKey="date" tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, {month:'short', day:'numeric'})} stroke="hsl(var(--muted-foreground))" fontSize={12} fontFamily="monospace" tickMargin={15} />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} fontFamily="monospace" tickMargin={10} />
-                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', fontFamily: 'monospace', borderRadius: '8px' }} itemStyle={{ color: 'hsl(var(--primary))' }} />
-                  <Line type="monotone" dataKey="weightLbs" stroke="hsl(var(--primary))" strokeWidth={4} dot={{ r: 5, fill: 'hsl(var(--primary))', strokeWidth: 2, stroke: '#111' }} activeDot={{ r: 8, fill: '#fff', stroke: 'hsl(var(--primary))', strokeWidth: 2 }} />
-                </LineChart>
-              </ResponsiveContainer>
             ) : (
-              <div className="w-full h-full flex items-center justify-center border border-dashed border-border rounded-2xl font-mono text-muted-foreground tracking-widest bg-background/50">NO DATA POINTS RECORDED.</div>
+              <div className="relative w-full h-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={weightData ?? []} margin={{ top: 20, right: 20, left: 0, bottom: 20 }}>
+                    <XAxis dataKey="date" tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, {month:'short', day:'numeric'})} stroke="hsl(var(--muted-foreground))" tick={{ fill: 'hsl(var(--muted-foreground))' }} fontSize={12} fontFamily="monospace" tickMargin={15} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fill: 'hsl(var(--muted-foreground))' }} fontSize={12} fontFamily="monospace" tickMargin={10} domain={weightData && weightData.length > 0 ? ['auto', 'auto'] : [0, 200]} ticks={weightData && weightData.length > 0 ? undefined : [0, 50, 100, 150, 200]} />
+                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', fontFamily: 'monospace', borderRadius: '8px' }} itemStyle={{ color: 'hsl(var(--foreground))' }} labelStyle={{ color: 'hsl(var(--foreground))' }} />
+                    {weightData && weightData.length > 0 && (
+                      <Line type="monotone" dataKey="weightLbs" stroke="hsl(var(--primary))" strokeWidth={4} dot={{ r: 5, fill: 'hsl(var(--primary))', strokeWidth: 2, stroke: 'hsl(var(--background))' }} activeDot={{ r: 8, fill: 'hsl(var(--background))', stroke: 'hsl(var(--primary))', strokeWidth: 2 }} />
+                    )}
+                  </LineChart>
+                </ResponsiveContainer>
+                {(!weightData || weightData.length === 0) && (
+                  <div className="absolute inset-0 flex items-center justify-center font-mono text-muted-foreground tracking-widest pointer-events-none">NO DATA POINTS RECORDED.</div>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -60,19 +65,26 @@ export default function Progress() {
            <div className="h-[400px] w-full relative z-10">
             {loadingDexa ? (
               <div className="w-full h-full flex items-center justify-center animate-pulse font-mono text-blue-500 tracking-widest">SCANNING...</div>
-            ) : dexaScans && dexaScans.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={[...dexaScans].reverse()} margin={{ top: 20, right: 20, left: 0, bottom: 20 }}>
-                  <XAxis dataKey="scanDate" tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, {month:'short', day:'numeric'})} stroke="hsl(var(--muted-foreground))" fontSize={12} fontFamily="monospace" tickMargin={15} />
-                  <YAxis yAxisId="left" stroke="hsl(var(--muted-foreground))" fontSize={12} fontFamily="monospace" domain={['dataMin - 2', 'dataMax + 2']} tickMargin={10} />
-                  <YAxis yAxisId="right" orientation="right" stroke="hsl(var(--muted-foreground))" fontSize={12} fontFamily="monospace" domain={['dataMin - 5', 'dataMax + 5']} tickMargin={10} />
-                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', fontFamily: 'monospace', borderRadius: '8px' }} />
-                  <Area yAxisId="left" type="monotone" dataKey="bodyFatPercent" name="Body Fat %" stroke="hsl(var(--chart-2))" strokeWidth={3} fill="hsl(var(--chart-2))" fillOpacity={0.15} />
-                  <Area yAxisId="right" type="monotone" dataKey="leanMassLbs" name="Lean Mass (Lbs)" stroke="hsl(var(--chart-3))" strokeWidth={3} fill="hsl(var(--chart-3))" fillOpacity={0.15} />
-                </AreaChart>
-              </ResponsiveContainer>
             ) : (
-              <div className="w-full h-full flex items-center justify-center border border-dashed border-border rounded-2xl font-mono text-muted-foreground tracking-widest bg-background/50">NO SCANS LOGGED.</div>
+              <div className="relative w-full h-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={dexaScans && dexaScans.length > 0 ? [...dexaScans].reverse() : []} margin={{ top: 20, right: 20, left: 0, bottom: 20 }}>
+                    <XAxis dataKey="scanDate" tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, {month:'short', day:'numeric'})} stroke="hsl(var(--muted-foreground))" tick={{ fill: 'hsl(var(--muted-foreground))' }} fontSize={12} fontFamily="monospace" tickMargin={15} />
+                    <YAxis yAxisId="left" stroke="hsl(var(--muted-foreground))" tick={{ fill: 'hsl(var(--muted-foreground))' }} fontSize={12} fontFamily="monospace" domain={dexaScans && dexaScans.length > 0 ? ['dataMin - 2', 'dataMax + 2'] : [0, 40]} ticks={dexaScans && dexaScans.length > 0 ? undefined : [0, 10, 20, 30, 40]} tickMargin={10} />
+                    <YAxis yAxisId="right" orientation="right" stroke="hsl(var(--muted-foreground))" tick={{ fill: 'hsl(var(--muted-foreground))' }} fontSize={12} fontFamily="monospace" domain={dexaScans && dexaScans.length > 0 ? ['dataMin - 5', 'dataMax + 5'] : [0, 200]} ticks={dexaScans && dexaScans.length > 0 ? undefined : [0, 50, 100, 150, 200]} tickMargin={10} />
+                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', fontFamily: 'monospace', borderRadius: '8px' }} itemStyle={{ color: 'hsl(var(--foreground))' }} labelStyle={{ color: 'hsl(var(--foreground))' }} />
+                    {dexaScans && dexaScans.length > 0 && (
+                      <>
+                        <Area yAxisId="left" type="monotone" dataKey="bodyFatPercent" name="Body Fat %" stroke="hsl(var(--chart-2))" strokeWidth={3} fill="hsl(var(--chart-2))" fillOpacity={0.15} />
+                        <Area yAxisId="right" type="monotone" dataKey="leanMassLbs" name="Lean Mass (Lbs)" stroke="hsl(var(--chart-3))" strokeWidth={3} fill="hsl(var(--chart-3))" fillOpacity={0.15} />
+                      </>
+                    )}
+                  </AreaChart>
+                </ResponsiveContainer>
+                {(!dexaScans || dexaScans.length === 0) && (
+                  <div className="absolute inset-0 flex items-center justify-center font-mono text-muted-foreground tracking-widest pointer-events-none">NO SCANS LOGGED.</div>
+                )}
+              </div>
             )}
           </div>
         </div>
