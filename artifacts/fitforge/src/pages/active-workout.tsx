@@ -4,7 +4,8 @@ import { useGetSession, useLogSet, useUpdateSession, getGetSessionQueryKey, getG
 import { Timer } from "@/components/timer";
 import { ExerciseModal } from "@/components/exercise-modal";
 import { WorkoutSummaryModal } from "@/components/workout-summary-modal";
-import { Check, ArrowRight, ArrowLeft, Loader2, Trophy, PlayCircle } from "lucide-react";
+import { SwapExerciseModal } from "@/components/swap-exercise-modal";
+import { Check, ArrowRight, ArrowLeft, Loader2, Trophy, PlayCircle, ArrowRightLeft } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 
@@ -90,6 +91,8 @@ export default function ActiveWorkout() {
   const [restSeconds, setRestSeconds] = useState<number | null>(null);
   const [howToExercise, setHowToExercise] = useState<any>(null);
   const [showSummary, setShowSummary] = useState(false);
+  // swaps: originalExerciseId → replacement exercise object (session-only, never persisted)
+  const [swaps, setSwaps] = useState<Record<number, any>>({});
 
   if (loadingSession || loadingDay) {
      return <div className="min-h-screen bg-background text-primary flex items-center justify-center font-mono animate-pulse tracking-widest text-xl"><Loader2 className="w-8 h-8 animate-spin mr-3"/> LOADING COMBAT DATA...</div>;
@@ -99,6 +102,12 @@ export default function ActiveWorkout() {
 
   const allExercises = day.exerciseGroups.flatMap(g => g.exercises);
   const exercise = allExercises[currentIndex];
+  // Apply session-only swap if one exists for this exercise
+  const swappedData = exercise ? swaps[exercise.exerciseId] : null;
+  const effectiveExercise = swappedData
+    ? { ...exercise, exerciseId: swappedData.id, exercise: swappedData }
+    : exercise;
+  const [showSwapModal, setShowSwapModal] = useState(false);
 
   if (!exercise) {
     return (
@@ -147,24 +156,40 @@ export default function ActiveWorkout() {
 
       <main className="flex-1 p-4 md:p-8 space-y-10 overflow-y-auto pb-40">
         <div className="space-y-3 text-center">
-          <h2 className="text-4xl font-extrabold uppercase tracking-tighter leading-tight">{exercise.exercise.name}</h2>
+          <h2 className="text-4xl font-extrabold uppercase tracking-tighter leading-tight">{effectiveExercise.exercise.name}</h2>
+          {swappedData && (
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded">
+                SWAPPED
+              </span>
+              <span className="text-[10px] font-mono text-muted-foreground line-through uppercase tracking-widest">
+                {exercise.exercise.name}
+              </span>
+            </div>
+          )}
           <div className="flex items-center justify-center gap-3 flex-wrap">
-            <div className="text-muted-foreground font-mono text-xs uppercase tracking-widest bg-secondary inline-block px-3 py-1 rounded">{exercise.exercise.muscleGroup}</div>
+            <div className="text-muted-foreground font-mono text-xs uppercase tracking-widest bg-secondary inline-block px-3 py-1 rounded">{effectiveExercise.exercise.muscleGroup}</div>
             <button
-              onClick={() => setHowToExercise(exercise.exercise)}
+              onClick={() => setHowToExercise(effectiveExercise.exercise)}
               className="flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-widest text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1 rounded transition-colors border border-primary/30 hover:border-primary/60"
             >
               <PlayCircle className="w-3.5 h-3.5" /> How To
+            </button>
+            <button
+              onClick={() => setShowSwapModal(true)}
+              className="flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-widest text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1 rounded transition-colors border border-amber-500/30 hover:border-amber-500/50"
+            >
+              <ArrowRightLeft className="w-3.5 h-3.5" /> {swappedData ? "Re-Swap" : "Machine Busy?"}
             </button>
           </div>
         </div>
 
         <div className="space-y-4">
-          {exercise.prescribedSets.map((set) => (
+          {effectiveExercise.prescribedSets.map((set) => (
             <SetRow
               key={set.id}
               prescribedSet={set}
-              exercise={exercise}
+              exercise={effectiveExercise}
               session={session}
               sessionId={sessionId}
               logSet={logSet}
@@ -201,6 +226,18 @@ export default function ActiveWorkout() {
       </footer>
 
       <ExerciseModal exercise={howToExercise} onClose={() => setHowToExercise(null)} />
+
+      {showSwapModal && (
+        <SwapExerciseModal
+          currentExerciseId={exercise.exerciseId}
+          muscleGroup={exercise.exercise.muscleGroup}
+          onSelect={(replacement) => {
+            setSwaps(prev => ({ ...prev, [exercise.exerciseId]: replacement }));
+            setShowSwapModal(false);
+          }}
+          onClose={() => setShowSwapModal(false)}
+        />
+      )}
     </div>
   );
 }
