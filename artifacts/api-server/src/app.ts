@@ -5,7 +5,6 @@ import session from "express-session";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { WebhookHandlers } from "./webhookHandlers";
-import { requireSession } from "./middlewares/requireSession";
 
 if (!process.env.SESSION_SECRET) {
   throw new Error("SESSION_SECRET environment variable is required but was not set.");
@@ -81,14 +80,6 @@ app.use(
     },
   })
 );
-
-// ─── Authentication ───────────────────────────────────────────────────────────
-// Applies to all /api routes.  Exemptions (handled inside the middleware):
-//   /api/healthz          — public health check
-//   /api/auth/*           — login / logout / check (must be reachable unauthenticated)
-// The Stripe webhook above is registered before this middleware and is
-// protected by Stripe's own signature verification.
-app.use("/api", requireSession);
 
 app.use("/api", router);
 
