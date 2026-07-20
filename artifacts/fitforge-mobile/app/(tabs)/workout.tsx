@@ -14,7 +14,8 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { WorkoutDayCard } from '@/components/WorkoutDayCard';
-import { useGetActivePlan } from '@workspace/api-client-react';
+import { OfflineBanner } from '@/components/OfflineBanner';
+import { useOfflinePlan } from '@/hooks/useOfflinePlan';
 
 const PLAN_TYPE_LABELS: Record<string, string> = {
   ppl: 'Push / Pull / Legs',
@@ -28,8 +29,7 @@ export default function WorkoutScreen() {
   const isWeb = Platform.OS === 'web';
   const topPad = isWeb ? 67 : insets.top;
 
-  const { data: plan, isLoading, isError, refetch, isRefetching } =
-    useGetActivePlan({});
+  const { plan, isLoading, isError, isOffline, refetch, isRefetching } = useOfflinePlan();
 
   if (isLoading) {
     return (
@@ -64,106 +64,111 @@ export default function WorkoutScreen() {
   }
 
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.background }}
-      contentContainerStyle={[
-        styles.content,
-        {
-          paddingTop: topPad + 16,
-          paddingBottom: isWeb ? 100 : 32,
-        },
-      ]}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={isRefetching}
-          onRefresh={refetch}
-          tintColor={colors.primary}
-        />
-      }
-    >
-      {/* Header */}
-      <View style={styles.pageHeader}>
-        <Text style={[styles.pageTitle, { color: colors.foreground }]}>
-          My Plan
-        </Text>
-      </View>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Offline indicator — shown below safe area, above content */}
+      {isOffline && <View style={{ paddingTop: topPad }}><OfflineBanner /></View>}
 
-      {/* Plan card */}
-      <View
-        style={[
-          styles.planCard,
-          { backgroundColor: colors.card, borderColor: colors.cardBorder },
+      <ScrollView
+        style={{ backgroundColor: colors.background }}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: isOffline ? 16 : topPad + 16,
+            paddingBottom: isWeb ? 100 : 32,
+          },
         ]}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor={colors.primary}
+          />
+        }
       >
-        <View style={styles.planCardTop}>
-          <View
-            style={[styles.planIcon, { backgroundColor: colors.accent }]}
-          >
-            <Feather name="layers" size={20} color={colors.primary} />
-          </View>
-          <View style={styles.planInfo}>
-            <Text style={[styles.planName, { color: colors.foreground }]}>
-              {plan.name}
-            </Text>
-            <Text style={[styles.planType, { color: colors.mutedForeground }]}>
-              {PLAN_TYPE_LABELS[plan.planType] ?? plan.planType}
-            </Text>
-          </View>
-          <View
-            style={[
-              styles.activeBadge,
-              { backgroundColor: colors.primary + '20' },
-            ]}
-          >
-            <Text style={[styles.activeText, { color: colors.primary }]}>
-              Active
-            </Text>
-          </View>
-        </View>
-        {plan.description ? (
-          <Text
-            style={[styles.planDescription, { color: colors.mutedForeground }]}
-          >
-            {plan.description}
+        {/* Header */}
+        <View style={styles.pageHeader}>
+          <Text style={[styles.pageTitle, { color: colors.foreground }]}>
+            My Plan
           </Text>
-        ) : null}
-      </View>
+        </View>
 
-      {/* Days */}
-      <View style={styles.daysHeader}>
-        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-          Training Days
-        </Text>
-        <Text style={[styles.dayCount, { color: colors.mutedForeground }]}>
-          {plan.days.length} days
-        </Text>
-      </View>
-
-      {plan.days.map((day) => (
-        <WorkoutDayCard
-          key={day.id}
-          dayNumber={day.dayNumber}
-          label={day.label}
-          focus={day.focus}
-          onPress={() => router.push(`/session/${day.id}`)}
-        />
-      ))}
-
-      {plan.aiNotes ? (
+        {/* Plan card */}
         <View
           style={[
-            styles.notesCard,
-            { backgroundColor: colors.accent, borderColor: colors.border },
+            styles.planCard,
+            { backgroundColor: colors.card, borderColor: colors.cardBorder },
           ]}
         >
-          <Feather name="info" size={14} color={colors.primary} />
-          <Text style={[styles.notesText, { color: colors.foreground }]}>
-            {plan.aiNotes}
+          <View style={styles.planCardTop}>
+            <View
+              style={[styles.planIcon, { backgroundColor: colors.accent }]}
+            >
+              <Feather name="layers" size={20} color={colors.primary} />
+            </View>
+            <View style={styles.planInfo}>
+              <Text style={[styles.planName, { color: colors.foreground }]}>
+                {plan.name}
+              </Text>
+              <Text style={[styles.planType, { color: colors.mutedForeground }]}>
+                {PLAN_TYPE_LABELS[plan.planType] ?? plan.planType}
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.activeBadge,
+                { backgroundColor: colors.primary + '20' },
+              ]}
+            >
+              <Text style={[styles.activeText, { color: colors.primary }]}>
+                Active
+              </Text>
+            </View>
+          </View>
+          {plan.description ? (
+            <Text
+              style={[styles.planDescription, { color: colors.mutedForeground }]}
+            >
+              {plan.description}
+            </Text>
+          ) : null}
+        </View>
+
+        {/* Days */}
+        <View style={styles.daysHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+            Training Days
+          </Text>
+          <Text style={[styles.dayCount, { color: colors.mutedForeground }]}>
+            {plan.days.length} days
           </Text>
         </View>
-      ) : null}
-    </ScrollView>
+
+        {plan.days.map((day) => (
+          <WorkoutDayCard
+            key={day.id}
+            dayNumber={day.dayNumber}
+            label={day.label}
+            focus={day.focus}
+            onPress={() => router.push(`/session/${day.id}`)}
+          />
+        ))}
+
+        {plan.aiNotes ? (
+          <View
+            style={[
+              styles.notesCard,
+              { backgroundColor: colors.accent, borderColor: colors.border },
+            ]}
+          >
+            <Feather name="info" size={14} color={colors.primary} />
+            <Text style={[styles.notesText, { color: colors.foreground }]}>
+              {plan.aiNotes}
+            </Text>
+          </View>
+        ) : null}
+      </ScrollView>
+    </View>
   );
 }
 

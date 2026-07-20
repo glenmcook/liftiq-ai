@@ -15,13 +15,14 @@ import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import {
-  useGetWorkoutDay,
   useCreateSession,
   useLogSet,
   useUpdateSession,
 } from '@workspace/api-client-react';
 import { CelebrationModal } from '@/components/CelebrationModal';
 import { SwapExerciseModal } from '@/components/SwapExerciseModal';
+import { OfflineBanner } from '@/components/OfflineBanner';
+import { useOfflineWorkoutDay } from '@/hooks/useOfflineWorkoutDay';
 
 interface SwappedExercise {
   id: number;
@@ -42,7 +43,7 @@ export default function SessionScreen() {
   const { dayId } = useLocalSearchParams<{ dayId: string }>();
   const colors = useColors();
 
-  const { data: day, isLoading, isError } = useGetWorkoutDay(
+  const { day, isLoading, isError, isOffline } = useOfflineWorkoutDay(
     parseInt(dayId ?? '0')
   );
 
@@ -200,6 +201,7 @@ export default function SessionScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {isOffline && <OfflineBanner />}
       <ScrollView
         contentContainerStyle={[
           styles.content,

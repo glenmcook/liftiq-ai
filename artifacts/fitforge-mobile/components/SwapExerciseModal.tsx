@@ -86,7 +86,7 @@ export function SwapExerciseModal({
           </View>
         ) : alternates.length === 0 ? (
           <View style={styles.centered}>
-            <Feather name="dumbbell" size={32} color={colors.mutedForeground} />
+            <Feather name="activity" size={32} color={colors.mutedForeground} />
             <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>No alternatives found</Text>
           </View>
         ) : (
