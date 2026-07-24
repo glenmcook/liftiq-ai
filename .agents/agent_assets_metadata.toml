@@ -48,3 +48,9 @@ id = "anAFA6itOmJr6uOv9-zfk"
 uri = "file://docs/business/sales-forecast.pdf"
 type = "pdf"
 title = "Sales Forecast"
+
+[[outputs]]
+id = "NLFQJ-jr01T0ybify750w"
+uri = "file://expo-qr.png"
+type = "image"
+title = "Scan to open LiftIQ AI in Expo Go"
