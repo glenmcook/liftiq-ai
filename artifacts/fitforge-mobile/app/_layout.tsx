@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -31,6 +31,14 @@ const BASE_URL = `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
 setBaseUrl(BASE_URL);
 
 const AUTH_TOKEN_KEY = "@fitforge/auth_token";
+
+// ─── Auth context ─────────────────────────────────────────────────────────────
+// Exposes logout() to screens nested under RootLayoutNav (e.g. Settings).
+
+const AuthContext = createContext<{ logout: () => void }>({ logout: () => {} });
+export function useAuth() {
+  return useContext(AuthContext);
+}
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -175,6 +183,12 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerBackTitle: 'Back' }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="session" options={{ headerShown: false }} />
+      <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+      <Stack.Screen name="library" options={{ title: 'Library' }} />
+      <Stack.Screen name="dexa" options={{ title: 'DEXA Scans' }} />
+      <Stack.Screen name="diet" options={{ title: 'Diet' }} />
+      <Stack.Screen name="checkin" options={{ title: 'AI Check-in' }} />
+      <Stack.Screen name="recommendations" options={{ title: 'Arsenal' }} />
     </Stack>
   );
 }
@@ -227,14 +241,22 @@ export default function RootLayout() {
     );
   }
 
+  const logout = async () => {
+    await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
+    setAuthTokenGetter(null);
+    setAuthenticated(false);
+  };
+
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView>
             <KeyboardProvider>
-              <PushSetup />
-              <RootLayoutNav />
+              <AuthContext.Provider value={{ logout }}>
+                <PushSetup />
+                <RootLayoutNav />
+              </AuthContext.Provider>
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>

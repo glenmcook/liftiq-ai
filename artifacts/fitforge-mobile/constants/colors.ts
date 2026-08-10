@@ -1,58 +1,366 @@
 /**
- * Design tokens derived from the FitForge web app's cyber-blue-light theme.
- * Matches web: background hsl(210 25% 97%), primary hsl(199 89% 37%)
+ * Design tokens for all 12 app themes (6 accent colors × light/dark),
+ * converted from the web app's HSL CSS variables (see
+ * artifacts/fitforge/src/hooks/useTheme.ts) into RN-friendly hex values.
+ * Keep in sync manually if the web themes change.
  */
 
-const colors = {
-  light: {
-    // Legacy aliases
-    text: '#0f1728',
-    tint: '#0284c7',
+export type ThemeId =
+  | 'neon-green' | 'cyber-blue' | 'volcanic' | 'purple-pulse' | 'crimson' | 'arctic'
+  | 'neon-green-light' | 'cyber-blue-light' | 'volcanic-light' | 'purple-pulse-light' | 'crimson-light' | 'arctic-light';
 
-    // Core surfaces
-    background: '#f4f8fc',
-    foreground: '#0f1728',
+export interface ThemeMeta {
+  id: ThemeId;
+  name: string;
+  label: string;
+  primaryHex: string;
+  bgHex: string;
+}
 
-    // Cards / elevated surfaces
-    card: '#ffffff',
-    cardForeground: '#0f1728',
-    cardBorder: '#d8e2ec',
+export interface Palette {
+  text: string;
+  tint: string;
+  background: string;
+  foreground: string;
+  card: string;
+  cardForeground: string;
+  cardBorder: string;
+  primary: string;
+  primaryForeground: string;
+  secondary: string;
+  secondaryForeground: string;
+  muted: string;
+  mutedForeground: string;
+  accent: string;
+  accentForeground: string;
+  destructive: string;
+  destructiveForeground: string;
+  border: string;
+  input: string;
+  ring: string;
+  chart1: string;
+  chart2: string;
+  chart3: string;
+}
 
-    // Primary action color (sky blue - matches web cyber-blue-light)
-    primary: '#0284c7',
-    primaryForeground: '#ffffff',
+export const THEME_META: ThemeMeta[] = [
+  { id: 'neon-green', name: "Neon Green", label: "Dark", primaryHex: '#4ade4a', bgHex: '#0a0a0a' },
+  { id: 'cyber-blue', name: "Cyber Blue", label: "Dark", primaryHex: '#0ea5e9', bgHex: '#050912' },
+  { id: 'volcanic', name: "Volcanic", label: "Dark", primaryHex: '#f59e0b', bgHex: '#0d0900' },
+  { id: 'purple-pulse', name: "Purple Pulse", label: "Dark", primaryHex: '#a855f7', bgHex: '#080610' },
+  { id: 'crimson', name: "Crimson", label: "Dark", primaryHex: '#ef4444', bgHex: '#0d0505' },
+  { id: 'arctic', name: "Arctic", label: "Dark / Indigo", primaryHex: '#6366f1', bgHex: '#f1f5f9' },
+  { id: 'neon-green-light', name: "Neon Green", label: "Light", primaryHex: '#4ade4a', bgHex: '#f4faf4' },
+  { id: 'cyber-blue-light', name: "Cyber Blue", label: "Light", primaryHex: '#0ea5e9', bgHex: '#f0f8ff' },
+  { id: 'volcanic-light', name: "Volcanic", label: "Light", primaryHex: '#f59e0b', bgHex: '#fefaf0' },
+  { id: 'purple-pulse-light', name: "Purple Pulse", label: "Light", primaryHex: '#a855f7', bgHex: '#faf5ff' },
+  { id: 'crimson-light', name: "Crimson", label: "Light", primaryHex: '#ef4444', bgHex: '#fff5f5' },
+  { id: 'arctic-light', name: "Arctic", label: "Light / Indigo", primaryHex: '#6366f1', bgHex: '#f1f5f9' },
+];
 
-    // Secondary / less-emphasis surfaces
-    secondary: '#e4edf5',
-    secondaryForeground: '#0f1728',
-
-    // Muted / subdued elements
-    muted: '#e4edf5',
-    mutedForeground: '#617080',
-
-    // Accent highlights
-    accent: '#dae6f2',
-    accentForeground: '#0f1728',
-
-    // Destructive actions
+const themes: Record<ThemeId, Palette> = {
+  'neon-green': {
+    text: '#fafafa',
+    tint: '#38e619',
+    background: '#0a0a0a',
+    foreground: '#fafafa',
+    card: '#121212',
+    cardForeground: '#fafafa',
+    cardBorder: '#1f1f1f',
+    primary: '#38e619',
+    primaryForeground: '#0d0d0d',
+    secondary: '#1f1f1f',
+    secondaryForeground: '#fafafa',
+    muted: '#1f1f1f',
+    mutedForeground: '#999999',
+    accent: '#262626',
+    accentForeground: '#fafafa',
     destructive: '#ef4444',
     destructiveForeground: '#ffffff',
-
-    // Borders and input outlines
-    border: '#d8e2ec',
-    input: '#d8e2ec',
-
-    // Ring / focus
-    ring: '#0284c7',
-
-    // Chart colors
-    chart1: '#0284c7',
-    chart2: '#0369a1',
-    chart3: '#22c55e',
+    border: '#262626',
+    input: '#262626',
+    ring: '#38e619',
+    chart1: '#38e619',
+    chart2: '#3399ff',
+    chart3: '#36e2af',
   },
-
-  // Border radius matching the web app's --radius: 0.5rem (8px)
-  radius: 10,
+  'cyber-blue': {
+    text: '#f8fafc',
+    tint: '#0da2e7',
+    background: '#040810',
+    foreground: '#f8fafc',
+    card: '#090e1b',
+    cardForeground: '#f8fafc',
+    cardBorder: '#121a2b',
+    primary: '#0da2e7',
+    primaryForeground: '#050a14',
+    secondary: '#121a2b',
+    secondaryForeground: '#f8fafc',
+    muted: '#121a2b',
+    mutedForeground: '#8596ad',
+    accent: '#172036',
+    accentForeground: '#f8fafc',
+    destructive: '#ef4444',
+    destructiveForeground: '#ffffff',
+    border: '#172036',
+    input: '#172036',
+    ring: '#0da2e7',
+    chart1: '#0da2e7',
+    chart2: '#3399ff',
+    chart3: '#36e2af',
+  },
+  'volcanic': {
+    text: '#fcfbf8',
+    tint: '#f59f0a',
+    background: '#100a04',
+    foreground: '#fcfbf8',
+    card: '#170f08',
+    cardForeground: '#fcfbf8',
+    cardBorder: '#2b1f12',
+    primary: '#f59f0a',
+    primaryForeground: '#140d05',
+    secondary: '#2b1f12',
+    secondaryForeground: '#fcfbf8',
+    muted: '#2b1f12',
+    mutedForeground: '#ad9985',
+    accent: '#362617',
+    accentForeground: '#fcfbf8',
+    destructive: '#ef4444',
+    destructiveForeground: '#ffffff',
+    border: '#362617',
+    input: '#362617',
+    ring: '#f59f0a',
+    chart1: '#f59f0a',
+    chart2: '#3399ff',
+    chart3: '#36e2af',
+  },
+  'purple-pulse': {
+    text: '#faf8fb',
+    tint: '#a855f7',
+    background: '#0a050f',
+    foreground: '#faf8fb',
+    card: '#120a1a',
+    cardForeground: '#faf8fb',
+    cardBorder: '#1f1429',
+    primary: '#a855f7',
+    primaryForeground: '#0d0613',
+    secondary: '#1f1429',
+    secondaryForeground: '#faf8fb',
+    muted: '#1f1429',
+    mutedForeground: '#998aa8',
+    accent: '#261934',
+    accentForeground: '#faf8fb',
+    destructive: '#ef4444',
+    destructiveForeground: '#ffffff',
+    border: '#261934',
+    input: '#261934',
+    ring: '#a855f7',
+    chart1: '#a855f7',
+    chart2: '#3399ff',
+    chart3: '#36e2af',
+  },
+  'crimson': {
+    text: '#fbf9f9',
+    tint: '#ef4343',
+    background: '#100404',
+    foreground: '#fbf9f9',
+    card: '#170808',
+    cardForeground: '#fbf9f9',
+    cardBorder: '#2b1212',
+    primary: '#ef4343',
+    primaryForeground: '#140505',
+    secondary: '#2b1212',
+    secondaryForeground: '#fbf9f9',
+    muted: '#2b1212',
+    mutedForeground: '#a88a8a',
+    accent: '#361717',
+    accentForeground: '#fbf9f9',
+    destructive: '#ef4444',
+    destructiveForeground: '#ffffff',
+    border: '#361717',
+    input: '#361717',
+    ring: '#ef4343',
+    chart1: '#ef4343',
+    chart2: '#3399ff',
+    chart3: '#36e2af',
+  },
+  'arctic': {
+    text: '#0f1729',
+    tint: '#5f62f1',
+    background: '#f3f5f7',
+    foreground: '#0f1729',
+    card: '#ffffff',
+    cardForeground: '#0f1729',
+    cardBorder: '#d7dfea',
+    primary: '#5f62f1',
+    primaryForeground: '#ffffff',
+    secondary: '#e2ebf3',
+    secondaryForeground: '#0f1729',
+    muted: '#e2ebf3',
+    mutedForeground: '#5c6b7f',
+    accent: '#e2ebf3',
+    accentForeground: '#0f1729',
+    destructive: '#ef4444',
+    destructiveForeground: '#ffffff',
+    border: '#d7dfea',
+    input: '#d7dfea',
+    ring: '#5f62f1',
+    chart1: '#5f62f1',
+    chart2: '#0a61b8',
+    chart3: '#127d5d',
+  },
+  'neon-green-light': {
+    text: '#142112',
+    tint: '#21850f',
+    background: '#f6f9f6',
+    foreground: '#142112',
+    card: '#ffffff',
+    cardForeground: '#142112',
+    cardBorder: '#dce7da',
+    primary: '#21850f',
+    primaryForeground: '#ffffff',
+    secondary: '#ebf1ea',
+    secondaryForeground: '#142112',
+    muted: '#ebf1ea',
+    mutedForeground: '#597255',
+    accent: '#e2ebe0',
+    accentForeground: '#142112',
+    destructive: '#ef4444',
+    destructiveForeground: '#ffffff',
+    border: '#dce7da',
+    input: '#dce7da',
+    ring: '#21850f',
+    chart1: '#21850f',
+    chart2: '#0a61b8',
+    chart3: '#127d5d',
+  },
+  'cyber-blue-light': {
+    text: '#0f1729',
+    tint: '#0a7db2',
+    background: '#f5f7f9',
+    foreground: '#0f1729',
+    card: '#ffffff',
+    cardForeground: '#0f1729',
+    cardBorder: '#d9dfe8',
+    primary: '#0a7db2',
+    primaryForeground: '#ffffff',
+    secondary: '#e8edf3',
+    secondaryForeground: '#0f1729',
+    muted: '#e8edf3',
+    mutedForeground: '#5a6c87',
+    accent: '#dee6ed',
+    accentForeground: '#0f1729',
+    destructive: '#ef4444',
+    destructiveForeground: '#ffffff',
+    border: '#d9dfe8',
+    input: '#d9dfe8',
+    ring: '#0a7db2',
+    chart1: '#0a7db2',
+    chart2: '#0a61b8',
+    chart3: '#127d5d',
+  },
+  'volcanic-light': {
+    text: '#241a0f',
+    tint: '#f59f0a',
+    background: '#faf8f5',
+    foreground: '#241a0f',
+    card: '#ffffff',
+    cardForeground: '#241a0f',
+    cardBorder: '#e8e2d9',
+    primary: '#f59f0a',
+    primaryForeground: '#140d05',
+    secondary: '#f2eee9',
+    secondaryForeground: '#241a0f',
+    muted: '#f2eee9',
+    mutedForeground: '#7d6954',
+    accent: '#ece7df',
+    accentForeground: '#241a0f',
+    destructive: '#ef4444',
+    destructiveForeground: '#ffffff',
+    border: '#e8e2d9',
+    input: '#e8e2d9',
+    ring: '#f59f0a',
+    chart1: '#ce8509',
+    chart2: '#0a61b8',
+    chart3: '#127d5d',
+  },
+  'purple-pulse-light': {
+    text: '#1a0f24',
+    tint: '#9732f5',
+    background: '#f7f6f9',
+    foreground: '#1a0f24',
+    card: '#ffffff',
+    cardForeground: '#1a0f24',
+    cardBorder: '#e0dae7',
+    primary: '#9732f5',
+    primaryForeground: '#ffffff',
+    secondary: '#edeaf1',
+    secondaryForeground: '#1a0f24',
+    muted: '#edeaf1',
+    mutedForeground: '#736284',
+    accent: '#e6e0eb',
+    accentForeground: '#1a0f24',
+    destructive: '#ef4444',
+    destructiveForeground: '#ffffff',
+    border: '#e0dae7',
+    input: '#e0dae7',
+    ring: '#9732f5',
+    chart1: '#9732f5',
+    chart2: '#0a61b8',
+    chart3: '#127d5d',
+  },
+  'crimson-light': {
+    text: '#211212',
+    tint: '#eb1414',
+    background: '#f9f6f6',
+    foreground: '#211212',
+    card: '#ffffff',
+    cardForeground: '#211212',
+    cardBorder: '#e7dada',
+    primary: '#eb1414',
+    primaryForeground: '#ffffff',
+    secondary: '#f0eaea',
+    secondaryForeground: '#211212',
+    muted: '#f0eaea',
+    mutedForeground: '#7b6565',
+    accent: '#e9e2e2',
+    accentForeground: '#211212',
+    destructive: '#ef4444',
+    destructiveForeground: '#ffffff',
+    border: '#e7dada',
+    input: '#e7dada',
+    ring: '#eb1414',
+    chart1: '#eb1414',
+    chart2: '#0a61b8',
+    chart3: '#127d5d',
+  },
+  'arctic-light': {
+    text: '#0f1729',
+    tint: '#5f62f1',
+    background: '#f3f5f7',
+    foreground: '#0f1729',
+    card: '#ffffff',
+    cardForeground: '#0f1729',
+    cardBorder: '#d7dfea',
+    primary: '#5f62f1',
+    primaryForeground: '#ffffff',
+    secondary: '#e2ebf3',
+    secondaryForeground: '#0f1729',
+    muted: '#e2ebf3',
+    mutedForeground: '#5c6b7f',
+    accent: '#e2ebf3',
+    accentForeground: '#0f1729',
+    destructive: '#ef4444',
+    destructiveForeground: '#ffffff',
+    border: '#d7dfea',
+    input: '#d7dfea',
+    ring: '#5f62f1',
+    chart1: '#5f62f1',
+    chart2: '#0a61b8',
+    chart3: '#127d5d',
+  },
 };
 
-export default colors;
+export const radius = 10;
+
+export default themes;

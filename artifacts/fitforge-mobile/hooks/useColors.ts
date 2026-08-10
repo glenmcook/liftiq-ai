@@ -1,23 +1,49 @@
+import { useCallback, useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
-import colors from '@/constants/colors';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import themes, { THEME_META, type ThemeId } from '@/constants/colors';
+
+const STORAGE_KEY = '@fitforge/theme';
+const DEFAULT_DARK: ThemeId = 'cyber-blue';
+const DEFAULT_LIGHT: ThemeId = 'cyber-blue-light';
+
+let currentThemeId: ThemeId | null = null;
+let listeners: Array<(id: ThemeId | null) => void> = [];
+
+async function loadStoredTheme() {
+  const stored = await AsyncStorage.getItem(STORAGE_KEY);
+  currentThemeId = (stored as ThemeId) ?? null;
+  listeners.forEach((l) => l(currentThemeId));
+}
+loadStoredTheme();
 
 /**
- * Returns the design tokens for the current color scheme.
- *
- * The returned object contains all color tokens for the active palette
- * plus scheme-independent values like `radius`.
- *
- * Falls back to the light palette when no dark key is defined in
- * constants/colors.ts (the scaffold ships light-only by default).
- * When a sibling web artifact's dark tokens are synced into a `dark`
- * key, this hook will automatically switch palettes based on the
- * device's appearance setting.
+ * Returns the design tokens for the active theme, plus setTheme/themeId for
+ * building a picker UI. When no theme has been explicitly chosen, follows
+ * the device's system light/dark appearance (Cyber Blue in both cases,
+ * matching the app's original default).
  */
 export function useColors() {
   const scheme = useColorScheme();
-  const palette =
-    scheme === 'dark' && 'dark' in colors
-      ? (colors as Record<string, typeof colors.light>).dark
-      : colors.light;
-  return { ...palette, radius: colors.radius };
+  const [themeId, setThemeIdState] = useState<ThemeId | null>(currentThemeId);
+
+  useEffect(() => {
+    const listener = (id: ThemeId | null) => setThemeIdState(id);
+    listeners.push(listener);
+    return () => {
+      listeners = listeners.filter((l) => l !== listener);
+    };
+  }, []);
+
+  const setTheme = useCallback((id: ThemeId | null) => {
+    currentThemeId = id;
+    listeners.forEach((l) => l(id));
+    if (id) AsyncStorage.setItem(STORAGE_KEY, id);
+    else AsyncStorage.removeItem(STORAGE_KEY);
+  }, []);
+
+  const activeId = themeId ?? (scheme === 'dark' ? DEFAULT_DARK : DEFAULT_LIGHT);
+  const palette = themes[activeId] ?? themes[DEFAULT_LIGHT];
+
+  return { ...palette, radius: 10, themeId: activeId, isSystemTheme: themeId === null, setTheme, themes: THEME_META };
 }

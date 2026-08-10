@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { useGetProfile, useSaveProfile } from '@workspace/api-client-react';
@@ -117,11 +118,49 @@ function InputRow({
   );
 }
 
+const MORE_LINKS = [
+  { href: '/library', label: 'Library', icon: 'book-open' as const },
+  { href: '/dexa', label: 'DEXA Scans', icon: 'activity' as const },
+  { href: '/diet', label: 'Diet', icon: 'coffee' as const },
+  { href: '/checkin', label: 'AI Check-in', icon: 'zap' as const },
+  { href: '/recommendations', label: 'Arsenal', icon: 'star' as const },
+  { href: '/settings', label: 'Settings', icon: 'settings' as const },
+];
+
+function MenuRow({
+  icon,
+  label,
+  onPress,
+  colors,
+  last,
+}: {
+  icon: keyof typeof Feather.glyphMap;
+  label: string;
+  onPress: () => void;
+  colors: ReturnType<typeof useColors>;
+  last?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        menuStyles.row,
+        { borderBottomWidth: last ? 0 : StyleSheet.hairlineWidth, borderColor: colors.border, opacity: pressed ? 0.6 : 1 },
+      ]}
+    >
+      <Feather name={icon} size={18} color={colors.foreground} />
+      <Text style={[menuStyles.rowLabel, { color: colors.foreground }]}>{label}</Text>
+      <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+    </Pressable>
+  );
+}
+
 export default function ProfileScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === 'web';
   const topPad = isWeb ? 67 : insets.top;
+  const router = useRouter();
 
   const { data: profile, isLoading } = useGetProfile({});
   const saveProfile = useSaveProfile();
@@ -351,9 +390,58 @@ export default function ProfileScreen() {
           />
         </View>
       )}
+
+      {/* More: Library, DEXA, Diet, AI Check-in, Arsenal, Settings */}
+      {!editing && (
+        <View style={{ marginTop: 4 }}>
+          <Text
+            style={[styles.sectionLabel, { color: colors.mutedForeground, marginBottom: 8 }]}
+          >
+            MORE
+          </Text>
+          <View
+            style={[
+              menuStyles.card,
+              { backgroundColor: colors.card, borderColor: colors.cardBorder },
+            ]}
+          >
+            {MORE_LINKS.map((link, i) => (
+              <MenuRow
+                key={link.href}
+                icon={link.icon}
+                label={link.label}
+                colors={colors}
+                last={i === MORE_LINKS.length - 1}
+                onPress={() => router.push(link.href as any)}
+              />
+            ))}
+          </View>
+        </View>
+      )}
     </ScrollView>
   );
 }
+
+const menuStyles = StyleSheet.create({
+  card: {
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  rowLabel: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: 'Inter_500Medium',
+    fontWeight: '500' as const,
+  },
+});
 
 const styles = StyleSheet.create({
   centered: {
