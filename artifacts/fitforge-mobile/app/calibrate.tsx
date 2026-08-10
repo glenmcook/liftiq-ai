@@ -18,6 +18,7 @@ import {
   useGetProfile,
   useSaveProfile,
   useGeneratePlan,
+  useCreateDexaScan,
   customFetch,
 } from '@workspace/api-client-react';
 
@@ -54,6 +55,9 @@ interface FormState {
   gender: string;
   heightInches: string;
   weightLbs: string;
+  dexaBodyFatPercent: string;
+  dexaLeanMassLbs: string;
+  dexaVisceralFatLevel: string;
   currentActivities: string;
   experienceLevel: string;
   fitnessGoal: string;
@@ -68,6 +72,9 @@ const DEFAULT_FORM: FormState = {
   gender: 'male',
   heightInches: '',
   weightLbs: '',
+  dexaBodyFatPercent: '',
+  dexaLeanMassLbs: '',
+  dexaVisceralFatLevel: '',
   currentActivities: '',
   experienceLevel: 'intermediate',
   fitnessGoal: 'build_muscle',
@@ -79,6 +86,10 @@ const DEFAULT_FORM: FormState = {
 
 type Colors = ReturnType<typeof useColors>;
 type DietPrefsResponse = { dietaryPreference: string; allergies: string | null };
+
+function FieldLabel({ children, colors }: { children: string; colors: Colors }) {
+  return <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>{children}</Text>;
+}
 
 function ChipRow({
   options,
@@ -118,7 +129,7 @@ function ChipRow({
 }
 
 interface Step {
-  key: keyof FormState | 'review';
+  key: keyof FormState | 'review' | 'dexa';
   question: string;
   helper?: string;
   optional?: boolean;
@@ -129,6 +140,7 @@ const STEPS: Step[] = [
   { key: 'gender', question: 'What is your gender?' },
   { key: 'heightInches', question: 'How tall are you?', helper: 'In inches — used to size your nutrition targets.', optional: true },
   { key: 'weightLbs', question: 'What do you weigh?', helper: 'In pounds — used for both training and nutrition targets.', optional: true },
+  { key: 'dexa', question: 'Have a recent DEXA scan?', helper: 'Body composition data sharpens both your training intensity and nutrition targets. Leave blank if you don’t have one.', optional: true },
   { key: 'currentActivities', question: 'What do you currently do?', helper: 'Any cardio, sports, or other activity — and how often. This shapes both the exercises chosen and how the AI balances recovery.', optional: true },
   { key: 'experienceLevel', question: 'How experienced are you with training?' },
   { key: 'fitnessGoal', question: 'What is your main goal?' },
@@ -150,6 +162,7 @@ export default function CalibrateScreen() {
   );
   const saveProfile = useSaveProfile();
   const generatePlan = useGeneratePlan();
+  const createDexaScan = useCreateDexaScan();
 
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
   const [hydrated, setHydrated] = useState(false);
@@ -183,7 +196,8 @@ export default function CalibrateScreen() {
         } catch {
           // No diet preferences yet — fine, defaults apply.
         }
-        setForm({
+        setForm((f) => ({
+          ...f,
           age: String(profile.age),
           gender: profile.gender,
           heightInches: profile.heightInches != null ? String(profile.heightInches) : '',
@@ -195,7 +209,7 @@ export default function CalibrateScreen() {
           splitPreference: profile.splitPreference ?? '',
           dietaryPreference: dietPrefs?.dietaryPreference ?? 'omnivore',
           allergies: dietPrefs?.allergies ?? '',
-        });
+        }));
       }
       setHydrated(true);
     })();
@@ -213,6 +227,16 @@ export default function CalibrateScreen() {
       return !!n && n >= 1 && n <= 7;
     }
     return true;
+  };
+
+  // Whether the current step has anything entered — used only to decide the
+  // "Skip" vs "Next" button label on optional steps, never to block advancing.
+  const stepHasValue = (): boolean => {
+    if (step.key === 'dexa') {
+      return !!(form.dexaBodyFatPercent || form.dexaLeanMassLbs || form.dexaVisceralFatLevel);
+    }
+    if (step.key === 'review') return true;
+    return !!form[step.key as keyof FormState];
   };
 
   const handleNext = () => {
@@ -259,6 +283,23 @@ export default function CalibrateScreen() {
           allergies: form.allergies || null,
         }),
       });
+
+      const bodyFatPercent = parseFloat(form.dexaBodyFatPercent);
+      const leanMassLbs = parseFloat(form.dexaLeanMassLbs);
+      const visceralFatLevel = parseFloat(form.dexaVisceralFatLevel);
+      const hasDexaData =
+        Number.isFinite(bodyFatPercent) || Number.isFinite(leanMassLbs) || Number.isFinite(visceralFatLevel);
+      if (hasDexaData) {
+        await createDexaScan.mutateAsync({
+          data: {
+            scanDate: new Date().toISOString().split('T')[0],
+            bodyFatPercent: Number.isFinite(bodyFatPercent) ? bodyFatPercent : undefined,
+            leanMassLbs: Number.isFinite(leanMassLbs) ? leanMassLbs : undefined,
+            visceralFatLevel: Number.isFinite(visceralFatLevel) ? visceralFatLevel : undefined,
+          },
+        });
+      }
+
       await generatePlan.mutateAsync(undefined as unknown as void);
       queryClient.clear();
       Alert.alert('Plan Generated', 'Your training plan is ready.', [
@@ -355,6 +396,44 @@ export default function CalibrateScreen() {
             style={[inputStyle, styles.bigInput]}
           />
         );
+      case 'dexa':
+        return (
+          <View style={{ gap: 14 }}>
+            <View>
+              <FieldLabel colors={colors}>Body Fat %</FieldLabel>
+              <TextInput
+                value={form.dexaBodyFatPercent}
+                onChangeText={(v) => patch({ dexaBodyFatPercent: v })}
+                keyboardType="decimal-pad"
+                placeholder="e.g. 18.5"
+                placeholderTextColor={colors.mutedForeground}
+                style={inputStyle}
+              />
+            </View>
+            <View>
+              <FieldLabel colors={colors}>Lean Mass (lbs)</FieldLabel>
+              <TextInput
+                value={form.dexaLeanMassLbs}
+                onChangeText={(v) => patch({ dexaLeanMassLbs: v })}
+                keyboardType="decimal-pad"
+                placeholder="e.g. 145"
+                placeholderTextColor={colors.mutedForeground}
+                style={inputStyle}
+              />
+            </View>
+            <View>
+              <FieldLabel colors={colors}>Visceral Fat Level</FieldLabel>
+              <TextInput
+                value={form.dexaVisceralFatLevel}
+                onChangeText={(v) => patch({ dexaVisceralFatLevel: v })}
+                keyboardType="decimal-pad"
+                placeholder="e.g. 8"
+                placeholderTextColor={colors.mutedForeground}
+                style={inputStyle}
+              />
+            </View>
+          </View>
+        );
       case 'currentActivities':
         return (
           <TextInput
@@ -419,6 +498,9 @@ export default function CalibrateScreen() {
           ['Gender', GENDERS.find((g) => g.value === form.gender)?.label ?? form.gender],
           ['Height', form.heightInches ? `${form.heightInches} in` : '—'],
           ['Weight', form.weightLbs ? `${form.weightLbs} lbs` : '—'],
+          ['DEXA body fat', form.dexaBodyFatPercent ? `${form.dexaBodyFatPercent}%` : '—'],
+          ['DEXA lean mass', form.dexaLeanMassLbs ? `${form.dexaLeanMassLbs} lbs` : '—'],
+          ['DEXA visceral fat', form.dexaVisceralFatLevel || '—'],
           ['Activities', form.currentActivities || '—'],
           ['Experience', EXPERIENCE.find((e) => e.value === form.experienceLevel)?.label ?? form.experienceLevel],
           ['Goal', GOALS.find((g) => g.value === form.fitnessGoal)?.label ?? form.fitnessGoal],
@@ -496,7 +578,7 @@ export default function CalibrateScreen() {
         ) : (
           <Pressable onPress={handleNext} style={[styles.submitBtn, { backgroundColor: colors.primary }]}>
             <Text style={[styles.submitText, { color: colors.primaryForeground }]}>
-              {step.optional && !form[step.key as keyof FormState] ? 'Skip' : 'Next'}
+              {step.optional && !stepHasValue() ? 'Skip' : 'Next'}
             </Text>
             <Feather name="chevron-right" size={18} color={colors.primaryForeground} />
           </Pressable>
@@ -523,6 +605,14 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 },
   question: { fontSize: 24, fontFamily: 'Inter_700Bold', fontWeight: '700' as const, lineHeight: 30 },
   helper: { fontSize: 13, fontFamily: 'Inter_400Regular', lineHeight: 18, marginTop: 8 },
+  fieldLabel: {
+    fontSize: 11,
+    fontFamily: 'Inter_500Medium',
+    fontWeight: '500' as const,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 6,
+  },
   input: {
     borderWidth: 1,
     borderRadius: 12,
@@ -567,5 +657,6 @@ const styles = StyleSheet.create({
   },
   submitText: { fontSize: 15, fontFamily: 'Inter_700Bold', fontWeight: '700' as const, letterSpacing: 0.3 },
 });
+
 
 
