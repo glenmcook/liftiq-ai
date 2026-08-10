@@ -157,7 +157,7 @@ router.post("/plans/generate", aiRateLimit, async (req, res): Promise<void> => {
     : "No profile data available. Create a general intermediate PPL program.";
 
   const dexaContext = latestScan
-    ? `\n\nLATEST DEXA SCAN (${latestScan.scanDate}): Body fat ${latestScan.bodyFatPercent ?? "unknown"}%, lean mass ${latestScan.leanMassLbs ?? "unknown"}lbs, fat mass ${latestScan.fatMassLbs ?? "unknown"}lbs, visceral fat level ${latestScan.visceralFatLevel ?? "unknown"}${latestScan.notes ? `, notes: ${latestScan.notes}` : ""}. Use this to inform intensity/volume — e.g. elevated visceral fat or a body-fat percentage well above/below the goal-appropriate range should shift set/rep schemes and possibly conditioning emphasis, not just exercise choice.`
+    ? `\n\nLATEST DEXA SCAN (${latestScan.scanDate}): Body fat ${latestScan.bodyFatPercent ?? "unknown"}%, lean mass ${latestScan.leanMassLbs ?? "unknown"}lbs, fat mass ${latestScan.fatMassLbs ?? "unknown"}lbs, total weight ${latestScan.totalWeightLbs ?? "unknown"}lbs, bone density ${latestScan.boneDensity ?? "unknown"}g/cm², visceral fat level ${latestScan.visceralFatLevel ?? "unknown"}${latestScan.notes ? `, notes: ${latestScan.notes}` : ""}. Use the full scan to inform intensity/volume — e.g. elevated visceral fat or a body-fat percentage well above/below the goal-appropriate range should shift set/rep schemes and possibly conditioning emphasis; low bone density can warrant more conservative loading progression; lean mass vs. total weight indicates how much of their frame is trainable muscle. Not just exercise choice.`
     : "\n\nNo DEXA scan on file — reason from the stated goal, weight, and activities instead.";
 
   const splitPreferenceContext = profile?.splitPreference

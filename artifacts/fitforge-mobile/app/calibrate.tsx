@@ -60,6 +60,10 @@ interface FormState {
   dexaBodyFatPercent: string;
   dexaLeanMassLbs: string;
   dexaVisceralFatLevel: string;
+  dexaFatMassLbs: string;
+  dexaBoneDensity: string;
+  dexaTotalWeightLbs: string;
+  dexaNotes: string;
   currentActivities: string;
   experienceLevel: string;
   fitnessGoal: string;
@@ -77,6 +81,10 @@ const DEFAULT_FORM: FormState = {
   dexaBodyFatPercent: '',
   dexaLeanMassLbs: '',
   dexaVisceralFatLevel: '',
+  dexaFatMassLbs: '',
+  dexaBoneDensity: '',
+  dexaTotalWeightLbs: '',
+  dexaNotes: '',
   currentActivities: '',
   experienceLevel: 'intermediate',
   fitnessGoal: 'build_muscle',
@@ -261,6 +269,10 @@ export default function CalibrateScreen() {
         dexaBodyFatPercent: data.bodyFatPercent != null ? String(data.bodyFatPercent) : form.dexaBodyFatPercent,
         dexaLeanMassLbs: data.leanMassLbs != null ? String(data.leanMassLbs) : form.dexaLeanMassLbs,
         dexaVisceralFatLevel: data.visceralFatLevel != null ? String(data.visceralFatLevel) : form.dexaVisceralFatLevel,
+        dexaFatMassLbs: data.fatMassLbs != null ? String(data.fatMassLbs) : form.dexaFatMassLbs,
+        dexaBoneDensity: data.boneDensity != null ? String(data.boneDensity) : form.dexaBoneDensity,
+        dexaTotalWeightLbs: data.totalWeightLbs != null ? String(data.totalWeightLbs) : form.dexaTotalWeightLbs,
+        dexaNotes: data.notes ?? form.dexaNotes,
       });
     } catch (err: any) {
       Alert.alert('Could not read report', err.message ?? 'Try a clearer photo or enter the numbers manually.');
@@ -285,7 +297,14 @@ export default function CalibrateScreen() {
   // "Skip" vs "Next" button label on optional steps, never to block advancing.
   const stepHasValue = (): boolean => {
     if (step.key === 'dexa') {
-      return !!(form.dexaBodyFatPercent || form.dexaLeanMassLbs || form.dexaVisceralFatLevel);
+      return !!(
+        form.dexaBodyFatPercent ||
+        form.dexaLeanMassLbs ||
+        form.dexaVisceralFatLevel ||
+        form.dexaFatMassLbs ||
+        form.dexaBoneDensity ||
+        form.dexaTotalWeightLbs
+      );
     }
     if (step.key === 'review') return true;
     return !!form[step.key as keyof FormState];
@@ -339,8 +358,16 @@ export default function CalibrateScreen() {
       const bodyFatPercent = parseFloat(form.dexaBodyFatPercent);
       const leanMassLbs = parseFloat(form.dexaLeanMassLbs);
       const visceralFatLevel = parseFloat(form.dexaVisceralFatLevel);
+      const fatMassLbs = parseFloat(form.dexaFatMassLbs);
+      const boneDensity = parseFloat(form.dexaBoneDensity);
+      const totalWeightLbs = parseFloat(form.dexaTotalWeightLbs);
       const hasDexaData =
-        Number.isFinite(bodyFatPercent) || Number.isFinite(leanMassLbs) || Number.isFinite(visceralFatLevel);
+        Number.isFinite(bodyFatPercent) ||
+        Number.isFinite(leanMassLbs) ||
+        Number.isFinite(visceralFatLevel) ||
+        Number.isFinite(fatMassLbs) ||
+        Number.isFinite(boneDensity) ||
+        Number.isFinite(totalWeightLbs);
       if (hasDexaData) {
         await createDexaScan.mutateAsync({
           data: {
@@ -348,6 +375,10 @@ export default function CalibrateScreen() {
             bodyFatPercent: Number.isFinite(bodyFatPercent) ? bodyFatPercent : undefined,
             leanMassLbs: Number.isFinite(leanMassLbs) ? leanMassLbs : undefined,
             visceralFatLevel: Number.isFinite(visceralFatLevel) ? visceralFatLevel : undefined,
+            fatMassLbs: Number.isFinite(fatMassLbs) ? fatMassLbs : undefined,
+            boneDensity: Number.isFinite(boneDensity) ? boneDensity : undefined,
+            totalWeightLbs: Number.isFinite(totalWeightLbs) ? totalWeightLbs : undefined,
+            notes: form.dexaNotes || undefined,
           },
         });
       }
