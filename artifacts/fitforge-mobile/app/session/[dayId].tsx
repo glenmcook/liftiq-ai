@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -40,6 +40,78 @@ interface LogEntry {
   done: boolean;
 }
 
+function RestTimerBar({
+  seconds,
+  onDismiss,
+  colors,
+}: {
+  seconds: number;
+  onDismiss: () => void;
+  colors: ReturnType<typeof useColors>;
+}) {
+  const [timeLeft, setTimeLeft] = useState(seconds);
+  const [running, setRunning] = useState(true);
+  const notifiedRef = useRef(false);
+
+  useEffect(() => {
+    if (!running || timeLeft <= 0) return;
+    const id = setInterval(() => setTimeLeft((t) => Math.max(0, t - 1)), 1000);
+    return () => clearInterval(id);
+  }, [running, timeLeft]);
+
+  useEffect(() => {
+    if (timeLeft === 0 && !notifiedRef.current) {
+      notifiedRef.current = true;
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  }, [timeLeft]);
+
+  const mm = Math.floor(timeLeft / 60);
+  const ss = timeLeft % 60;
+  const label = `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+  const pct = seconds > 0 ? Math.max(0, Math.min(1, timeLeft / seconds)) : 0;
+
+  return (
+    <View style={[styles.timerBar, { backgroundColor: colors.background, borderColor: colors.border }]}>
+      <View style={[styles.timerProgressTrack, { backgroundColor: colors.muted }]}>
+        <View style={[styles.timerProgressFill, { width: `${pct * 100}%`, backgroundColor: colors.primary }]} />
+      </View>
+      <View style={styles.timerRow}>
+        <View>
+          <Text style={[styles.timerLabel, { color: colors.mutedForeground }]}>REST</Text>
+          <Text style={[styles.timerValue, { color: timeLeft === 0 ? colors.primary : colors.foreground }]}>
+            {label}
+          </Text>
+        </View>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Pressable
+            onPress={() => setRunning((r) => !r)}
+            style={[styles.timerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+          >
+            <Feather name={running ? 'pause' : 'play'} size={16} color={colors.foreground} />
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              setTimeLeft(seconds);
+              setRunning(true);
+              notifiedRef.current = false;
+            }}
+            style={[styles.timerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+          >
+            <Feather name="rotate-ccw" size={16} color={colors.foreground} />
+          </Pressable>
+          <Pressable
+            onPress={onDismiss}
+            style={[styles.timerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+          >
+            <Feather name="x" size={16} color={colors.foreground} />
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 export default function SessionScreen() {
   const { dayId } = useLocalSearchParams<{ dayId: string }>();
   const colors = useColors();
@@ -59,6 +131,10 @@ export default function SessionScreen() {
   const [swaps, setSwaps] = useState<Record<number, SwappedExercise>>({});
   const [swapTarget, setSwapTarget] = useState<{ exerciseId: number; muscleGroup: string } | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
+  // { seconds, nonce } rather than a bare number so back-to-back sets with
+  // the identical rest duration still remount the timer (via key={nonce})
+  // instead of silently no-op'ing because the prop value didn't change.
+  const [restTimer, setRestTimer] = useState<{ seconds: number; nonce: number } | null>(null);
 
   const entryKey = (exerciseId: number, setNumber: number) =>
     `${exerciseId}-${setNumber}`;
@@ -126,7 +202,8 @@ export default function SessionScreen() {
     slotExerciseId: number,
     setNumber: number,
     reps: string,
-    weight: string
+    weight: string,
+    restSeconds: number
   ) => {
     if (!sessionId) return;
     const parsedReps = parseInt(reps);
@@ -157,6 +234,10 @@ export default function SessionScreen() {
       // the field first. Without this, the displayed value would reset to
       // "0" instead of showing what was actually recorded.
       updateEntry(slotExerciseId, setNumber, { done: true, reps, weight });
+
+      if (restSeconds > 0) {
+        setRestTimer((prev) => ({ seconds: restSeconds, nonce: (prev?.nonce ?? 0) + 1 }));
+      }
 
       // Dopamine hit — fire an immediate push notification for PRs
       if (result?.isPersonalRecord && Number.isFinite(parsedWeight) && parsedWeight > 0) {
@@ -508,7 +589,8 @@ export default function SessionScreen() {
                               ex.exerciseId,
                               ps.setNumber,
                               entry.reps,
-                              entry.weight
+                              entry.weight,
+                              ps.restSeconds
                             )
                           }
                           disabled={!sessionId || isDone}
@@ -577,6 +659,14 @@ export default function SessionScreen() {
           },
         ]}
       >
+        {sessionId && restTimer && (
+          <RestTimerBar
+            key={restTimer.nonce}
+            seconds={restTimer.seconds}
+            onDismiss={() => setRestTimer(null)}
+            colors={colors}
+          />
+        )}
         {!sessionId ? (
           <Pressable
             onPress={handleStart}
@@ -653,6 +743,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
+  },
+  timerBar: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  timerProgressTrack: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+  },
+  timerProgressFill: {
+    height: '100%',
+  },
+  timerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  timerLabel: {
+    fontSize: 10,
+    fontFamily: 'Inter_600SemiBold',
+    fontWeight: '600' as const,
+    letterSpacing: 1.5,
+    marginBottom: 2,
+  },
+  timerValue: {
+    fontSize: 28,
+    fontFamily: 'Inter_700Bold',
+    fontWeight: '700' as const,
+    fontVariant: ['tabular-nums'],
+  },
+  timerBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   errorText: {
     fontSize: 15,
