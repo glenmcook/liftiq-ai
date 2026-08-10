@@ -110,8 +110,10 @@ export default function SessionScreen() {
       });
       setSessionId(session.id);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch {
-      Alert.alert('Error', 'Could not start session. Please try again.');
+    } catch (err) {
+      console.error('handleStart failed:', err);
+      const detail = err instanceof Error ? err.message : String(err);
+      Alert.alert('Error', `Could not start session. Please try again.\n\n${detail}`);
     } finally {
       setStarting(false);
     }
@@ -154,7 +156,7 @@ export default function SessionScreen() {
       if (result?.isPersonalRecord && Number.isFinite(parsedWeight) && parsedWeight > 0) {
         const exerciseName =
           swaps[slotExerciseId]?.name ??
-          day?.groups
+          day?.exerciseGroups
             .flatMap((g) => g.exercises)
             .find((ex) => ex.exercise.id === slotExerciseId)?.exercise.name ??
           'Exercise';
@@ -163,8 +165,10 @@ export default function SessionScreen() {
       } else {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
-    } catch {
-      Alert.alert('Error', 'Could not log set.');
+    } catch (err) {
+      console.error('handleLogSet failed:', err);
+      const detail = err instanceof Error ? err.message : String(err);
+      Alert.alert('Error', `Could not log set.\n\n${detail}`);
     }
   };
 

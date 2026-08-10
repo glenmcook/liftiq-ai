@@ -12,8 +12,14 @@ import dashboardRouter from "./dashboard";
 import dietRouter from "./diet";
 import stripeRouter from "./stripe";
 import pushRouter from "./push";
+import { requireSession } from "../middlewares/requireSession";
 
 const router: IRouter = Router();
+
+// Applied here (not in app.ts) because requireSession's public-path check
+// compares against req.path with the /api prefix already stripped, which
+// only holds once we're inside this router (mounted at app.use("/api", ...)).
+router.use(requireSession);
 
 router.use(healthRouter);
 router.use(authRouter);
