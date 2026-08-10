@@ -10,6 +10,8 @@ import {
   exercisesTable,
   userProfilesTable,
   dexaScansTable,
+  exerciseMaxesTable,
+  workoutSessionsTable,
 } from "@workspace/db";
 import {
   GetPlanParams,
@@ -114,6 +116,21 @@ router.post("/plans/generate", aiRateLimit, async (req, res): Promise<void> => {
     .orderBy(desc(dexaScansTable.scanDate))
     .limit(1);
 
+  // Demonstrated performance history — this is what makes weight/rep
+  // prescriptions a real "next step" for this athlete instead of a guess
+  // re-derived from bodyweight/experience-level formulas every time.
+  const exerciseMaxes = await db
+    .select({ max: exerciseMaxesTable, exercise: exercisesTable })
+    .from(exerciseMaxesTable)
+    .leftJoin(exercisesTable, eq(exerciseMaxesTable.exerciseId, exercisesTable.id))
+    .orderBy(desc(exerciseMaxesTable.maxWeightLbs));
+
+  const allSessions = await db.select().from(workoutSessionsTable);
+  const finishedSessions = allSessions.filter((s) => s.completedAt != null);
+  const mostRecentSessionAt = finishedSessions
+    .map((s) => s.completedAt!)
+    .sort((a, b) => b.getTime() - a.getTime())[0];
+
   let planSpec: {
     name: string;
     description: string;
@@ -147,6 +164,18 @@ router.post("/plans/generate", aiRateLimit, async (req, res): Promise<void> => {
     ? `\n\nATHLETE'S EXPLICIT SPLIT REQUEST (follow this precisely — it overrides the reasoning below):\n"${profile.splitPreference}"\n\nIf this describes a specific number of unique training days, intensity tiers (e.g. Heavy/Moderate/Light), rest-day cadence, or a rotation that repeats independently of the calendar week, build the "days" array to match it exactly — including the day count and labels.`
     : "";
 
+  const progressionContext =
+    exerciseMaxes.length > 0
+      ? `\n\nDEMONSTRATED STRENGTH (all-time logged maxes — this is real, not estimated):\n${exerciseMaxes
+          .map(
+            (m) =>
+              `- ${m.exercise?.name ?? "Unknown exercise"}: ${m.maxWeightLbs}lbs (achieved ${m.achievedAt.toISOString().split("T")[0]})`
+          )
+          .join(
+            "\n"
+          )}\n${finishedSessions.length} completed session(s) on file${mostRecentSessionAt ? `, most recent ${mostRecentSessionAt.toISOString().split("T")[0]}` : ""}.\n\nUse this as the authoritative source for THIS athlete's actual strength on these exercises — do not re-derive their working weight from bodyweight/experience-level formulas when a logged max already exists for that exact exercise. Prescribe the next progressive step from it (typically at or modestly above their most recent max for low-rep top sets on a strength/hypertrophy goal, or a controlled percentage below it for higher-rep volume work), and say in aiNotes how this plan builds on their demonstrated progress. For any exercise with no logged max, fall back to standard formulas based on experience level and bodyweight, and treat that number as a baseline to establish rather than a proven max.`
+      : "\n\nNo logged performance history yet — this is a fresh baseline. Use standard formulas based on experience level and bodyweight, and note in aiNotes that weights will be refined once real performance is logged.";
+
   try {
     const completion = await openai.chat.completions.create({
       model: "gpt-5.6-luna",
@@ -161,7 +190,7 @@ router.post("/plans/generate", aiRateLimit, async (req, res): Promise<void> => {
           content: `Generate a personalized Push/Pull/Legs workout plan for this specific athlete:
 
 ATHLETE PROFILE:
-${profileContext}${dexaContext}${splitPreferenceContext}
+${profileContext}${dexaContext}${splitPreferenceContext}${progressionContext}
 
 IMPORTANT — read the athlete profile carefully before choosing exercises:
 - Select exercises that complement their current activities (e.g. if they swim, emphasize pulling strength and shoulder mobility; if they run, consider hip stability and single-leg work)
@@ -209,8 +238,8 @@ Return ONLY this exact JSON structure, no markdown, no explanation:
 Rules:
 - 4-6 exercise groups per day
 - When pickOne is true, include exactly 2 exercise options sharing the same groupName (give the athlete a choice)
-- Weight targets must be realistic for the athlete's stated experience level and body weight
-- For beginners: 3 sets of 10-15 reps, moderate weight. For intermediate: 3-4 sets of 6-12 reps, progressive. For advanced: 4-5 sets of 4-8 reps, heavy
+- Weight targets: for any exercise with a demonstrated max above, prescribe the next progressive step from that real number, not a formula (see DEMONSTRATED STRENGTH section). Only fall back to experience-level/bodyweight formulas for exercises with no logged history.
+- Rep ranges by experience level (applies regardless of where the weight number came from): beginners ~10-15 reps; intermediate ~6-12 reps, progressive; advanced ~4-8 reps, heavy. Set count 3-5 depending on exercise role.
 - Rest times: compound movements 90-180s, isolation 45-90s
 - Choose exercises that serve THIS athlete — vary from the standard template if their profile warrants it`,
         },
