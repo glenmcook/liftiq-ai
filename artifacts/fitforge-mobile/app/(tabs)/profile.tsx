@@ -13,8 +13,9 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQueryClient } from '@tanstack/react-query';
 import { useColors } from '@/hooks/useColors';
-import { useGetProfile, useSaveProfile } from '@workspace/api-client-react';
+import { useGetProfile, useSaveProfile, getGetProfileQueryKey } from '@workspace/api-client-react';
 
 const GOAL_OPTIONS = [
   { value: 'build_muscle', label: 'Build Muscle' },
@@ -164,6 +165,7 @@ export default function ProfileScreen() {
 
   const { data: profile, isLoading } = useGetProfile({});
   const saveProfile = useSaveProfile();
+  const queryClient = useQueryClient();
 
   const [age, setAge] = useState('');
   const [weight, setWeight] = useState('');
@@ -200,6 +202,7 @@ export default function ProfileScreen() {
           daysPerWeek: parseInt(days) || 4,
         },
       });
+      queryClient.invalidateQueries({ queryKey: getGetProfileQueryKey() });
       setEditing(false);
       Alert.alert('Saved', 'Profile updated successfully');
     } catch {

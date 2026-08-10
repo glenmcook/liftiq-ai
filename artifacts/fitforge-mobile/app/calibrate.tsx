@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { router } from 'expo-router';
@@ -157,9 +158,21 @@ export default function CalibrateScreen() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
 
+  // ProfileGate (root layout) already ran this exact query — with matching
+  // cache options here, this reuses that result instead of firing a third
+  // sequential network round-trip (after the startup token check and
+  // ProfileGate's own fetch) before this screen can render anything.
   const { data: profile, isLoading: profileLoading, refetch: refetchProfile } = useGetProfile(
     {},
-    { query: { retry: false } }
+    {
+      query: {
+        retry: false,
+        staleTime: Infinity,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+      },
+    }
   );
   const saveProfile = useSaveProfile();
   const generatePlan = useGeneratePlan();
@@ -169,6 +182,7 @@ export default function CalibrateScreen() {
   const [hydrated, setHydrated] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [parsingDexa, setParsingDexa] = useState(false);
   // Safety net: if the initial profile check or diet-preferences fetch ever
   // hangs (bad connection, stale bundle, unforeseen bug), don't leave the
   // user staring at a spinner forever with no way out.
@@ -217,6 +231,43 @@ export default function CalibrateScreen() {
   }, [profileLoading, profile, hydrated]);
 
   const patch = (p: Partial<FormState>) => setForm((f) => ({ ...f, ...p }));
+
+  const pickAndParseDexa = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('Permission needed', 'Photo library access is required to import a DEXA report.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    const asset = result.assets[0];
+    setParsingDexa(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', {
+        uri: asset.uri,
+        name: asset.fileName ?? 'scan.jpg',
+        type: asset.mimeType ?? 'image/jpeg',
+      } as any);
+      const data = await customFetch<any>('/api/dexa-scans/parse', {
+        method: 'POST',
+        body: fd,
+      });
+      patch({
+        dexaBodyFatPercent: data.bodyFatPercent != null ? String(data.bodyFatPercent) : form.dexaBodyFatPercent,
+        dexaLeanMassLbs: data.leanMassLbs != null ? String(data.leanMassLbs) : form.dexaLeanMassLbs,
+        dexaVisceralFatLevel: data.visceralFatLevel != null ? String(data.visceralFatLevel) : form.dexaVisceralFatLevel,
+      });
+    } catch (err: any) {
+      Alert.alert('Could not read report', err.message ?? 'Try a clearer photo or enter the numbers manually.');
+    } finally {
+      setParsingDexa(false);
+    }
+  };
 
   const step = STEPS[stepIndex];
   const isLastStep = stepIndex === STEPS.length - 1;
@@ -400,6 +451,25 @@ export default function CalibrateScreen() {
       case 'dexa':
         return (
           <View style={{ gap: 14 }}>
+            <Pressable
+              onPress={pickAndParseDexa}
+              disabled={parsingDexa}
+              style={[styles.uploadZone, { borderColor: colors.border, opacity: parsingDexa ? 0.6 : 1 }]}
+            >
+              {parsingDexa ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : (
+                <>
+                  <Feather name="upload" size={20} color={colors.primary} />
+                  <Text style={[styles.uploadZoneText, { color: colors.foreground }]}>
+                    Import DEXA report photo
+                  </Text>
+                  <Text style={[styles.uploadZoneSubtext, { color: colors.mutedForeground }]}>
+                    AI reads the numbers in for you — or enter them below
+                  </Text>
+                </>
+              )}
+            </Pressable>
             <View>
               <FieldLabel colors={colors}>Body Fat %</FieldLabel>
               <TextInput
@@ -597,6 +667,17 @@ export default function CalibrateScreen() {
 const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   container: { flex: 1 },
+  uploadZone: {
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: 14,
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  uploadZoneText: { fontSize: 14, fontFamily: 'Inter_600SemiBold', fontWeight: '600' as const },
+  uploadZoneSubtext: { fontSize: 12, fontFamily: 'Inter_400Regular' },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
