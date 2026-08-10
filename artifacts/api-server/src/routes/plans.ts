@@ -140,7 +140,7 @@ router.post("/plans/generate", aiRateLimit, async (req, res): Promise<void> => {
   try {
     const completion = await openai.chat.completions.create({
       model: "gpt-5.6-luna",
-      max_completion_tokens: 8000,
+      max_completion_tokens: 16000,
       messages: [
         {
           role: "system",
@@ -201,6 +201,13 @@ Rules:
     });
 
     const rawJson = completion.choices[0]?.message?.content ?? "{}";
+    const finishReason = completion.choices[0]?.finish_reason;
+    if (finishReason === "length") {
+      req.log.error(
+        { finishReason, rawJsonLength: rawJson.length },
+        "AI plan generation was truncated by max_completion_tokens before completing valid JSON"
+      );
+    }
     planSpec = JSON.parse(rawJson);
   } catch (err) {
     req.log.error({ err }, "AI plan generation failed, using default plan");
