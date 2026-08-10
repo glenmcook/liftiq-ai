@@ -45,7 +45,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col md:flex-row">
       {/* Mobile header */}
-      <div className="md:hidden flex items-center justify-between p-4 border-b border-border bg-card sticky top-0 z-50">
+      <div className="md:hidden flex items-center justify-between py-4 pr-4 pl-20 border-b border-border bg-card sticky top-0 z-40">
         <Wordmark size="sm" />
       </div>
 
@@ -83,16 +83,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col overflow-y-auto">
+      <div className="flex-1 flex flex-col overflow-y-auto pl-16 md:pl-0">
         <TrialBanner />
         <div className="flex-1 p-4 md:p-8 max-w-5xl mx-auto w-full">
           {children}
         </div>
       </div>
 
-      {/* Mobile nav bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex justify-around p-2 z-50 pb-safe">
-        {links.slice(0, 5).map((link) => {
+      {/* Mobile nav rail */}
+      <div className="md:hidden fixed top-0 bottom-0 left-0 w-16 bg-card border-r border-border flex flex-col items-center justify-center gap-2 p-2 z-50">
+        {[...links.slice(0, 5), links.find((link) => link.href === "/settings")!].map((link) => {
           const active = location === link.href || (link.href !== "/" && location.startsWith(link.href));
           return (
             <Link key={link.href} href={link.href} className={`p-3 rounded-full ${active ? "text-primary bg-primary/10" : "text-muted-foreground"}`}>
