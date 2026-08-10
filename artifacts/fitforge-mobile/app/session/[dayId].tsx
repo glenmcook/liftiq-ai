@@ -149,8 +149,14 @@ export default function SessionScreen() {
             : undefined,
         },
       });
-      // Always key done-state on the slot (original) exercise ID
-      updateEntry(slotExerciseId, setNumber, { done: true });
+      // Always key done-state on the slot (original) exercise ID.
+      // Pass through the exact reps/weight strings that were just logged —
+      // updateEntry's fallback defaults (reps: 0) only apply when no entry
+      // exists yet, which is the case whenever the set was logged from the
+      // placeholder-shown recommended value without the user typing into
+      // the field first. Without this, the displayed value would reset to
+      // "0" instead of showing what was actually recorded.
+      updateEntry(slotExerciseId, setNumber, { done: true, reps, weight });
 
       // Dopamine hit — fire an immediate push notification for PRs
       if (result?.isPersonalRecord && Number.isFinite(parsedWeight) && parsedWeight > 0) {
