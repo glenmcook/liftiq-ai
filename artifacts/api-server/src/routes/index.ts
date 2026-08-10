@@ -12,6 +12,7 @@ import dashboardRouter from "./dashboard";
 import dietRouter from "./diet";
 import stripeRouter from "./stripe";
 import pushRouter from "./push";
+import accountRouter from "./account";
 import { requireSession } from "../middlewares/requireSession";
 
 const router: IRouter = Router();
@@ -34,5 +35,6 @@ router.use(dashboardRouter);
 router.use(dietRouter);
 router.use(stripeRouter);
 router.use(pushRouter);
+router.use(accountRouter);
 
 export default router;

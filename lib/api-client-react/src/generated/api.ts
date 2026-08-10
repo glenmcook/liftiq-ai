@@ -1966,3 +1966,53 @@ export function useGetRecommendations<TData = Awaited<ReturnType<typeof getRecom
 
 
 
+
+export const getResetAccountUrl = () => {
+  return `/api/account/reset`
+}
+
+/**
+ * @summary Wipe all user data so the app can be recalibrated from scratch
+ */
+export const resetAccount = async ( options?: RequestInit): Promise<{ ok: boolean }> => {
+
+  return customFetch<{ ok: boolean }>(getResetAccountUrl(),
+  {
+    ...options,
+    method: 'POST'
+  }
+);}
+
+export const getResetAccountMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetAccount>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resetAccount>>, TError,void, TContext> => {
+
+const mutationKey = ['resetAccount'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resetAccount>>, void> = () => {
+          return  resetAccount(requestOptions)
+        }
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResetAccountMutationResult = NonNullable<Awaited<ReturnType<typeof resetAccount>>>
+    export type ResetAccountMutationError = ErrorType<unknown>
+
+/**
+ * @summary Wipe all user data so the app can be recalibrated from scratch
+ */
+export const useResetAccount = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetAccount>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof resetAccount>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getResetAccountMutationOptions(options));
+    }

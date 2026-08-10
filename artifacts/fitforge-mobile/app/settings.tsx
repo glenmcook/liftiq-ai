@@ -1,12 +1,14 @@
-import React from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useColors } from '@/hooks/useColors';
 import type { ThemeId } from '@/constants/colors';
 import { useAuth } from './_layout';
+import { useResetAccount } from '@workspace/api-client-react';
 
 function Row({
   icon,
@@ -94,12 +96,42 @@ export default function SettingsScreen() {
   const isWeb = Platform.OS === 'web';
   const topPad = isWeb ? 24 : insets.top;
   const { logout } = useAuth();
+  const queryClient = useQueryClient();
+  const resetAccount = useResetAccount();
+  const [resetting, setResetting] = useState(false);
 
   const confirmLogout = () => {
     Alert.alert('Log Out', 'You will need your access code to log back in.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Log Out', style: 'destructive', onPress: logout },
     ]);
+  };
+
+  const confirmReset = () => {
+    Alert.alert(
+      'Clear All Data?',
+      'This permanently deletes your profile, workout plans, logged sets, personal records, DEXA scans, check-ins, and diet preferences. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear Everything',
+          style: 'destructive',
+          onPress: async () => {
+            setResetting(true);
+            try {
+              await resetAccount.mutateAsync();
+              queryClient.clear();
+              router.replace('/calibrate');
+            } catch (err) {
+              const detail = err instanceof Error ? err.message : String(err);
+              Alert.alert('Error', `Could not clear data.\n\n${detail}`);
+            } finally {
+              setResetting(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -145,6 +177,34 @@ export default function SettingsScreen() {
       </Text>
       <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.card }]}>
         <Row icon="log-out" label="Log Out" onPress={confirmLogout} destructive />
+      </View>
+
+      <Text
+        style={[styles.sectionLabel, { color: colors.mutedForeground, marginTop: 24 }]}
+      >
+        DANGER ZONE
+      </Text>
+      <Text style={[styles.helperText, { color: colors.mutedForeground }]}>
+        Wipes everything so you can go through Calibrate again as if this were a fresh install.
+      </Text>
+      <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.card }]}>
+        <Pressable
+          onPress={resetting ? undefined : confirmReset}
+          style={({ pressed }) => [
+            styles.row,
+            { borderColor: colors.border, opacity: pressed || resetting ? 0.6 : 1 },
+          ]}
+        >
+          {resetting ? (
+            <ActivityIndicator size="small" color={colors.destructive} />
+          ) : (
+            <Feather name="trash-2" size={18} color={colors.destructive} />
+          )}
+          <Text style={[styles.rowLabel, { color: colors.destructive }]}>
+            {resetting ? 'Clearing...' : 'Clear Data (Reset to New)'}
+          </Text>
+          {!resetting && <Feather name="chevron-right" size={16} color={colors.mutedForeground} />}
+        </Pressable>
       </View>
 
       <Text
@@ -255,3 +315,4 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
   },
 });
+

@@ -545,3 +545,11 @@ export const GetRecommendationsResponseItem = zod.object({
 export const GetRecommendationsResponse = zod.array(GetRecommendationsResponseItem)
 
 
+
+
+/**
+ * @summary Wipe all user data (profile, plans, workout history, DEXA scans, check-ins, diet preferences) so the app can be recalibrated from scratch
+ */
+export const ResetAccountResponse = zod.object({
+  "ok": zod.boolean()
+})

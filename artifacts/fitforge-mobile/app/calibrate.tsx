@@ -12,11 +12,13 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useColors } from '@/hooks/useColors';
 import {
   useGetProfile,
   useSaveProfile,
   useGeneratePlan,
+  customFetch,
 } from '@workspace/api-client-react';
 
 const GOALS = [
@@ -38,39 +40,45 @@ const GENDERS = [
   { value: 'other', label: 'Other' },
 ];
 
+const DIET_TYPES = [
+  { value: 'omnivore', label: 'Omnivore' },
+  { value: 'vegetarian', label: 'Vegetarian' },
+  { value: 'vegan', label: 'Vegan' },
+  { value: 'pescatarian', label: 'Pescatarian' },
+  { value: 'keto', label: 'Keto' },
+  { value: 'paleo', label: 'Paleo' },
+];
+
 interface FormState {
   age: string;
   gender: string;
-  weightLbs: string;
   heightInches: string;
-  fitnessGoal: string;
-  experienceLevel: string;
+  weightLbs: string;
   currentActivities: string;
+  experienceLevel: string;
+  fitnessGoal: string;
   daysPerWeek: string;
   splitPreference: string;
+  dietaryPreference: string;
+  allergies: string;
 }
 
 const DEFAULT_FORM: FormState = {
-  age: '30',
+  age: '',
   gender: 'male',
-  weightLbs: '180',
-  heightInches: '70',
-  fitnessGoal: 'build_muscle',
-  experienceLevel: 'intermediate',
+  heightInches: '',
+  weightLbs: '',
   currentActivities: '',
+  experienceLevel: 'intermediate',
+  fitnessGoal: 'build_muscle',
   daysPerWeek: '4',
   splitPreference: '',
+  dietaryPreference: 'omnivore',
+  allergies: '',
 };
 
 type Colors = ReturnType<typeof useColors>;
-
-function SectionLabel({ children, colors }: { children: string; colors: Colors }) {
-  return <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>{children}</Text>;
-}
-
-function FieldLabel({ children, colors }: { children: string; colors: Colors }) {
-  return <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>{children}</Text>;
-}
+type DietPrefsResponse = { dietaryPreference: string; allergies: string | null };
 
 function ChipRow({
   options,
@@ -99,12 +107,7 @@ function ChipRow({
               },
             ]}
           >
-            <Text
-              style={[
-                styles.chipText,
-                { color: active ? colors.primaryForeground : colors.foreground },
-              ]}
-            >
+            <Text style={[styles.chipText, { color: active ? colors.primaryForeground : colors.foreground }]}>
               {opt.label}
             </Text>
           </Pressable>
@@ -114,82 +117,142 @@ function ChipRow({
   );
 }
 
+interface Step {
+  key: keyof FormState | 'review';
+  question: string;
+  helper?: string;
+  optional?: boolean;
+}
+
+const STEPS: Step[] = [
+  { key: 'age', question: 'How old are you?' },
+  { key: 'gender', question: 'What is your gender?' },
+  { key: 'heightInches', question: 'How tall are you?', helper: 'In inches — used to size your nutrition targets.', optional: true },
+  { key: 'weightLbs', question: 'What do you weigh?', helper: 'In pounds — used for both training and nutrition targets.', optional: true },
+  { key: 'currentActivities', question: 'What do you currently do?', helper: 'Any cardio, sports, or other activity — and how often. This shapes both the exercises chosen and how the AI balances recovery.', optional: true },
+  { key: 'experienceLevel', question: 'How experienced are you with training?' },
+  { key: 'fitnessGoal', question: 'What is your main goal?' },
+  { key: 'daysPerWeek', question: 'How many days a week do you want to train?' },
+  { key: 'splitPreference', question: 'Anything else about your schedule or situation?', helper: 'Rest-day habits, injuries, time constraints, or an exact split if you already know what you want — just describe it in plain language.', optional: true },
+  { key: 'dietaryPreference', question: 'What is your diet type?' },
+  { key: 'allergies', question: 'Any allergies or foods to avoid?', helper: 'Optional — e.g. "dairy, shellfish"', optional: true },
+  { key: 'review', question: 'Ready to build your plan' },
+];
+
 export default function CalibrateScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
 
-  const { data: profile, isLoading: profileLoading } = useGetProfile(
-    {},
-    { query: { retry: false } }
-  );
+  const { data: profile, isLoading: profileLoading } = useGetProfile({}, { query: { retry: false } });
   const saveProfile = useSaveProfile();
   const generatePlan = useGeneratePlan();
 
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
   const [hydrated, setHydrated] = useState(false);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Pre-fill from the existing profile (recalibrate case). On first run
-  // profileLoading resolves with no data (404) and we just keep the defaults.
+  const isFirstRun = !profileLoading && !profile;
+
+  // Pre-fill from the existing profile + diet preferences (recalibrate
+  // case). On first run there's nothing to fetch and we just keep defaults.
   useEffect(() => {
-    if (!profileLoading && !hydrated) {
+    if (hydrated || profileLoading) return;
+    (async () => {
       if (profile) {
+        let dietPrefs: DietPrefsResponse | null = null;
+        try {
+          dietPrefs = await customFetch<DietPrefsResponse>('/api/diet/preferences');
+        } catch {
+          // No diet preferences yet — fine, defaults apply.
+        }
         setForm({
           age: String(profile.age),
           gender: profile.gender,
-          weightLbs: profile.weightLbs != null ? String(profile.weightLbs) : '',
           heightInches: profile.heightInches != null ? String(profile.heightInches) : '',
-          fitnessGoal: profile.fitnessGoal,
-          experienceLevel: profile.experienceLevel,
+          weightLbs: profile.weightLbs != null ? String(profile.weightLbs) : '',
           currentActivities: profile.currentActivities ?? '',
+          experienceLevel: profile.experienceLevel,
+          fitnessGoal: profile.fitnessGoal,
           daysPerWeek: String(profile.daysPerWeek),
           splitPreference: profile.splitPreference ?? '',
+          dietaryPreference: dietPrefs?.dietaryPreference ?? 'omnivore',
+          allergies: dietPrefs?.allergies ?? '',
         });
       }
       setHydrated(true);
-    }
+    })();
   }, [profileLoading, profile, hydrated]);
-
-  const isFirstRun = !profileLoading && !profile;
-  const isPending = saveProfile.isPending || generatePlan.isPending;
 
   const patch = (p: Partial<FormState>) => setForm((f) => ({ ...f, ...p }));
 
+  const step = STEPS[stepIndex];
+  const isLastStep = stepIndex === STEPS.length - 1;
+
+  const canAdvance = (): boolean => {
+    if (step.key === 'age') return !!form.age && parseInt(form.age, 10) > 0;
+    if (step.key === 'daysPerWeek') {
+      const n = parseInt(form.daysPerWeek, 10);
+      return !!n && n >= 1 && n <= 7;
+    }
+    return true;
+  };
+
+  const handleNext = () => {
+    if (!canAdvance()) {
+      Alert.alert('Missing info', 'Please answer this one before moving on.');
+      return;
+    }
+    setStepIndex((i) => Math.min(STEPS.length - 1, i + 1));
+  };
+
+  const handleBack = () => {
+    if (stepIndex === 0) {
+      if (!isFirstRun) router.back();
+      return;
+    }
+    setStepIndex((i) => Math.max(0, i - 1));
+  };
+
   const handleSubmit = async () => {
     const age = parseInt(form.age, 10);
-    const weightLbs = parseFloat(form.weightLbs);
     const heightInches = parseFloat(form.heightInches);
+    const weightLbs = parseFloat(form.weightLbs);
     const daysPerWeek = parseInt(form.daysPerWeek, 10);
 
-    if (!age || age <= 0) {
-      Alert.alert('Missing info', 'Please enter a valid age.');
-      return;
-    }
-    if (!daysPerWeek || daysPerWeek < 1 || daysPerWeek > 7) {
-      Alert.alert('Missing info', 'Days per week must be between 1 and 7.');
-      return;
-    }
-
+    setSubmitting(true);
     try {
       await saveProfile.mutateAsync({
         data: {
           age,
           gender: form.gender,
-          weightLbs: Number.isFinite(weightLbs) && weightLbs > 0 ? weightLbs : undefined,
           heightInches: Number.isFinite(heightInches) && heightInches > 0 ? heightInches : undefined,
-          fitnessGoal: form.fitnessGoal,
-          experienceLevel: form.experienceLevel,
+          weightLbs: Number.isFinite(weightLbs) && weightLbs > 0 ? weightLbs : undefined,
           currentActivities: form.currentActivities || undefined,
+          experienceLevel: form.experienceLevel,
+          fitnessGoal: form.fitnessGoal,
           daysPerWeek,
           splitPreference: form.splitPreference || undefined,
         },
       });
+      await customFetch('/api/diet/preferences', {
+        method: 'POST',
+        body: JSON.stringify({
+          dietaryPreference: form.dietaryPreference,
+          allergies: form.allergies || null,
+        }),
+      });
       await generatePlan.mutateAsync(undefined as unknown as void);
+      queryClient.clear();
       Alert.alert('Plan Generated', 'Your training plan is ready.', [
         { text: 'OK', onPress: () => router.replace('/(tabs)') },
       ]);
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
-      Alert.alert('Error', `Could not save your profile and generate a plan.\n\n${detail}`);
+      Alert.alert('Error', `Could not save your info and generate a plan.\n\n${detail}`);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -201,216 +264,265 @@ export default function CalibrateScreen() {
     );
   }
 
-  return (
-    <ScrollView
-      style={{ backgroundColor: colors.background }}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    >
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.foreground }]}>
-          {isFirstRun ? 'Welcome to LiftIQ AI' : 'Recalibrate'}
-        </Text>
-        <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-          {isFirstRun
-            ? "Answer a few questions and we'll build your training plan."
-            : "Update your info below — we'll regenerate your plan from scratch."}
-        </Text>
-      </View>
+  const inputStyle = [
+    styles.input,
+    { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card },
+  ];
+  const textareaStyle = [
+    styles.textarea,
+    { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card },
+  ];
 
-      <SectionLabel colors={colors}>BIOMETRICS</SectionLabel>
-      <View style={styles.row}>
-        <View style={styles.half}>
-          <FieldLabel colors={colors}>Age</FieldLabel>
+  const renderStepBody = () => {
+    switch (step.key) {
+      case 'age':
+        return (
           <TextInput
             value={form.age}
             onChangeText={(v) => patch({ age: v })}
             keyboardType="number-pad"
-            style={[
-              styles.input,
-              { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card },
-            ]}
+            autoFocus
+            placeholder="30"
             placeholderTextColor={colors.mutedForeground}
+            style={[inputStyle, styles.bigInput]}
           />
-        </View>
-        <View style={styles.half}>
-          <FieldLabel colors={colors}>Weight (lbs)</FieldLabel>
-          <TextInput
-            value={form.weightLbs}
-            onChangeText={(v) => patch({ weightLbs: v })}
-            keyboardType="decimal-pad"
-            style={[
-              styles.input,
-              { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card },
-            ]}
-            placeholderTextColor={colors.mutedForeground}
-          />
-        </View>
-      </View>
-      <View style={styles.row}>
-        <View style={styles.half}>
-          <FieldLabel colors={colors}>Height (inches)</FieldLabel>
+        );
+      case 'gender':
+        return <ChipRow options={GENDERS} value={form.gender} onChange={(v) => patch({ gender: v })} colors={colors} />;
+      case 'heightInches':
+        return (
           <TextInput
             value={form.heightInches}
             onChangeText={(v) => patch({ heightInches: v })}
             keyboardType="decimal-pad"
-            style={[
-              styles.input,
-              { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card },
-            ]}
+            autoFocus
+            placeholder="70"
             placeholderTextColor={colors.mutedForeground}
+            style={[inputStyle, styles.bigInput]}
+          />
+        );
+      case 'weightLbs':
+        return (
+          <TextInput
+            value={form.weightLbs}
+            onChangeText={(v) => patch({ weightLbs: v })}
+            keyboardType="decimal-pad"
+            autoFocus
+            placeholder="180"
+            placeholderTextColor={colors.mutedForeground}
+            style={[inputStyle, styles.bigInput]}
+          />
+        );
+      case 'currentActivities':
+        return (
+          <TextInput
+            value={form.currentActivities}
+            onChangeText={(v) => patch({ currentActivities: v })}
+            placeholder="e.g. run 5 miles daily, swim 1000 yards daily, jiu-jitsu 2x/week"
+            placeholderTextColor={colors.mutedForeground}
+            multiline
+            autoFocus
+            style={textareaStyle}
+          />
+        );
+      case 'experienceLevel':
+        return (
+          <ChipRow options={EXPERIENCE} value={form.experienceLevel} onChange={(v) => patch({ experienceLevel: v })} colors={colors} />
+        );
+      case 'fitnessGoal':
+        return <ChipRow options={GOALS} value={form.fitnessGoal} onChange={(v) => patch({ fitnessGoal: v })} colors={colors} />;
+      case 'daysPerWeek':
+        return (
+          <TextInput
+            value={form.daysPerWeek}
+            onChangeText={(v) => patch({ daysPerWeek: v })}
+            keyboardType="number-pad"
+            autoFocus
+            placeholder="4"
+            placeholderTextColor={colors.mutedForeground}
+            style={[inputStyle, styles.bigInput]}
+          />
+        );
+      case 'splitPreference':
+        return (
+          <TextInput
+            value={form.splitPreference}
+            onChangeText={(v) => patch({ splitPreference: v })}
+            placeholder="e.g. I don't take rest days and want to lose belly fat"
+            placeholderTextColor={colors.mutedForeground}
+            multiline
+            autoFocus
+            style={textareaStyle}
+          />
+        );
+      case 'dietaryPreference':
+        return (
+          <ChipRow options={DIET_TYPES} value={form.dietaryPreference} onChange={(v) => patch({ dietaryPreference: v })} colors={colors} />
+        );
+      case 'allergies':
+        return (
+          <TextInput
+            value={form.allergies}
+            onChangeText={(v) => patch({ allergies: v })}
+            placeholder="e.g. dairy, shellfish"
+            placeholderTextColor={colors.mutedForeground}
+            multiline
+            autoFocus
+            style={textareaStyle}
+          />
+        );
+      case 'review': {
+        const rows: [string, string][] = [
+          ['Age', form.age || '—'],
+          ['Gender', GENDERS.find((g) => g.value === form.gender)?.label ?? form.gender],
+          ['Height', form.heightInches ? `${form.heightInches} in` : '—'],
+          ['Weight', form.weightLbs ? `${form.weightLbs} lbs` : '—'],
+          ['Activities', form.currentActivities || '—'],
+          ['Experience', EXPERIENCE.find((e) => e.value === form.experienceLevel)?.label ?? form.experienceLevel],
+          ['Goal', GOALS.find((g) => g.value === form.fitnessGoal)?.label ?? form.fitnessGoal],
+          ['Days/week', form.daysPerWeek],
+          ['Schedule notes', form.splitPreference || '—'],
+          ['Diet', DIET_TYPES.find((d) => d.value === form.dietaryPreference)?.label ?? form.dietaryPreference],
+          ['Allergies', form.allergies || '—'],
+        ];
+        return (
+          <View style={[styles.reviewCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
+            {rows.map(([label, value]) => (
+              <View key={label} style={styles.reviewRow}>
+                <Text style={[styles.reviewLabel, { color: colors.mutedForeground }]}>{label}</Text>
+                <Text style={[styles.reviewValue, { color: colors.foreground }]} numberOfLines={2}>
+                  {value}
+                </Text>
+              </View>
+            ))}
+          </View>
+        );
+      }
+    }
+  };
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+      <View style={styles.topBar}>
+        <Pressable onPress={handleBack} hitSlop={10} style={styles.topBarBtn}>
+          {(stepIndex > 0 || !isFirstRun) && (
+            <Feather name="chevron-left" size={22} color={colors.foreground} />
+          )}
+        </Pressable>
+        <View style={[styles.progressTrack, { backgroundColor: colors.muted }]}>
+          <View
+            style={[
+              styles.progressFill,
+              { backgroundColor: colors.primary, width: `${((stepIndex + 1) / STEPS.length) * 100}%` },
+            ]}
           />
         </View>
-        <View style={styles.half}>
-          <FieldLabel colors={colors}>Gender</FieldLabel>
-          <ChipRow options={GENDERS} value={form.gender} onChange={(v) => patch({ gender: v })} colors={colors} />
-        </View>
+        <Text style={[styles.stepCount, { color: colors.mutedForeground }]}>
+          {stepIndex + 1}/{STEPS.length}
+        </Text>
       </View>
 
-      <SectionLabel colors={colors}>GOALS & EXPERIENCE</SectionLabel>
-      <FieldLabel colors={colors}>Primary Goal</FieldLabel>
-      <ChipRow options={GOALS} value={form.fitnessGoal} onChange={(v) => patch({ fitnessGoal: v })} colors={colors} />
-      <FieldLabel colors={colors}>Experience Level</FieldLabel>
-      <ChipRow
-        options={EXPERIENCE}
-        value={form.experienceLevel}
-        onChange={(v) => patch({ experienceLevel: v })}
-        colors={colors}
-      />
-
-      <SectionLabel colors={colors}>SCHEDULE & SPLIT</SectionLabel>
-      <FieldLabel colors={colors}>Training Days Per Week (1-7)</FieldLabel>
-      <TextInput
-        value={form.daysPerWeek}
-        onChangeText={(v) => patch({ daysPerWeek: v })}
-        keyboardType="number-pad"
-        style={[
-          styles.input,
-          { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card },
-        ]}
-        placeholderTextColor={colors.mutedForeground}
-      />
-      <FieldLabel colors={colors}>Other Activities (optional)</FieldLabel>
-      <Text style={[styles.helperText, { color: colors.mutedForeground }]}>
-        Include volume/frequency if it's relevant — the AI reads this closely (e.g. "run 5 miles
-        daily" changes the plan more than just "running").
-      </Text>
-      <TextInput
-        value={form.currentActivities}
-        onChangeText={(v) => patch({ currentActivities: v })}
-        placeholder="e.g. run 5 miles daily, swim 1000 yards daily, jiu-jitsu 2x/week"
-        multiline
-        style={[
-          styles.textarea,
-          { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card },
-        ]}
-        placeholderTextColor={colors.mutedForeground}
-      />
-      <FieldLabel colors={colors}>Schedule & Anything Else (optional)</FieldLabel>
-      <Text style={[styles.helperText, { color: colors.mutedForeground }]}>
-        You don't need to specify exact tiers or day counts — just tell the AI your real
-        situation (e.g. "I don't take rest days," "trying to lose belly fat," "bad knees") and
-        it'll design the rotation and intensity structure to fit. Give it an exact split only if
-        you already know what you want.
-      </Text>
-      <TextInput
-        value={form.splitPreference}
-        onChangeText={(v) => patch({ splitPreference: v })}
-        placeholder="e.g. I don't take rest days and want to lose belly fat — or be specific: 9-day rotation, 3 heavy PPL / 3 moderate PPL / 3 light PPL"
-        multiline
-        style={[
-          styles.textarea,
-          { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card, minHeight: 90 },
-        ]}
-        placeholderTextColor={colors.mutedForeground}
-      />
-
-      <Pressable
-        onPress={handleSubmit}
-        disabled={isPending}
-        style={[styles.submitBtn, { backgroundColor: colors.primary, opacity: isPending ? 0.6 : 1 }]}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        {isPending ? (
-          <ActivityIndicator color={colors.primaryForeground} />
-        ) : (
-          <>
-            <Feather name="zap" size={18} color={colors.primaryForeground} />
-            <Text style={[styles.submitText, { color: colors.primaryForeground }]}>
-              {isFirstRun ? 'Generate My Plan' : 'Recalibrate & Regenerate'}
-            </Text>
-          </>
+        <Text style={[styles.question, { color: colors.foreground }]}>{step.question}</Text>
+        {step.helper && (
+          <Text style={[styles.helper, { color: colors.mutedForeground }]}>{step.helper}</Text>
         )}
-      </Pressable>
-    </ScrollView>
+        <View style={{ marginTop: 20 }}>{renderStepBody()}</View>
+      </ScrollView>
+
+      <View style={[styles.bottomBar, { borderTopColor: colors.border, paddingBottom: insets.bottom + 16 }]}>
+        {isLastStep ? (
+          <Pressable
+            onPress={handleSubmit}
+            disabled={submitting}
+            style={[styles.submitBtn, { backgroundColor: colors.primary, opacity: submitting ? 0.6 : 1 }]}
+          >
+            {submitting ? (
+              <ActivityIndicator color={colors.primaryForeground} />
+            ) : (
+              <>
+                <Feather name="zap" size={18} color={colors.primaryForeground} />
+                <Text style={[styles.submitText, { color: colors.primaryForeground }]}>Generate My Plan</Text>
+              </>
+            )}
+          </Pressable>
+        ) : (
+          <Pressable onPress={handleNext} style={[styles.submitBtn, { backgroundColor: colors.primary }]}>
+            <Text style={[styles.submitText, { color: colors.primaryForeground }]}>
+              {step.optional && !form[step.key as keyof FormState] ? 'Skip' : 'Next'}
+            </Text>
+            <Feather name="chevron-right" size={18} color={colors.primaryForeground} />
+          </Pressable>
+        )}
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  content: { paddingHorizontal: 20, paddingBottom: 60, gap: 4 },
-  header: { marginBottom: 12, gap: 6 },
-  title: { fontSize: 24, fontFamily: 'Inter_700Bold', fontWeight: '700' as const },
-  subtitle: { fontSize: 13, fontFamily: 'Inter_400Regular', lineHeight: 18 },
-  sectionLabel: {
-    fontSize: 11,
-    fontFamily: 'Inter_600SemiBold',
-    fontWeight: '600' as const,
-    letterSpacing: 1,
-    marginTop: 20,
-    marginBottom: 10,
+  container: { flex: 1 },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
-  fieldLabel: {
-    fontSize: 11,
-    fontFamily: 'Inter_500Medium',
-    fontWeight: '500' as const,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    marginBottom: 6,
-    marginTop: 12,
-  },
-  row: { flexDirection: 'row', gap: 12 },
-  half: { flex: 1 },
+  topBarBtn: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
+  progressTrack: { flex: 1, height: 4, borderRadius: 2, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 2 },
+  stepCount: { fontSize: 11, fontFamily: 'Inter_500Medium', fontWeight: '500' as const, minWidth: 32, textAlign: 'right' },
+  content: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 },
+  question: { fontSize: 24, fontFamily: 'Inter_700Bold', fontWeight: '700' as const, lineHeight: 30 },
+  helper: { fontSize: 13, fontFamily: 'Inter_400Regular', lineHeight: 18, marginTop: 8 },
   input: {
     borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
     fontFamily: 'Inter_400Regular',
   },
+  bigInput: { fontSize: 28, fontFamily: 'Inter_700Bold', fontWeight: '700' as const, textAlign: 'center' },
   textarea: {
     borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 15,
     fontFamily: 'Inter_400Regular',
-    minHeight: 60,
+    minHeight: 100,
     textAlignVertical: 'top',
   },
-  helperText: {
-    fontSize: 11,
-    fontFamily: 'Inter_400Regular',
-    lineHeight: 15,
-    marginBottom: 6,
-  },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  chip: { paddingHorizontal: 16, paddingVertical: 11, borderRadius: 22, borderWidth: 1 },
+  chipText: { fontSize: 14, fontFamily: 'Inter_500Medium', fontWeight: '500' as const },
+  reviewCard: { borderWidth: 1, borderRadius: 14, padding: 4 },
+  reviewRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 12,
     paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 20,
-    borderWidth: 1,
+    paddingVertical: 11,
   },
-  chipText: { fontSize: 13, fontFamily: 'Inter_500Medium', fontWeight: '500' as const },
+  reviewLabel: { fontSize: 12, fontFamily: 'Inter_500Medium', fontWeight: '500' as const, width: 100 },
+  reviewValue: { flex: 1, fontSize: 13, fontFamily: 'Inter_400Regular', textAlign: 'right' },
+  bottomBar: { paddingHorizontal: 24, paddingTop: 14, borderTopWidth: 1 },
   submitBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+    gap: 8,
     paddingVertical: 16,
     borderRadius: 14,
-    marginTop: 28,
   },
-  submitText: { fontSize: 14, fontFamily: 'Inter_700Bold', fontWeight: '700' as const, letterSpacing: 0.5 },
+  submitText: { fontSize: 15, fontFamily: 'Inter_700Bold', fontWeight: '700' as const, letterSpacing: 0.3 },
 });
+
