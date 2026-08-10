@@ -1,8 +1,10 @@
 import { Router, type IRouter } from "express";
 import { eq, desc, gte } from "drizzle-orm";
-import { db, workoutSessionsTable, loggedSetsTable, workoutPlansTable, workoutDaysTable, dexaScansTable, exerciseMaxesTable, exercisesTable } from "@workspace/db";
+import { db, workoutSessionsTable, loggedSetsTable, workoutPlansTable, workoutDaysTable, dexaScansTable, exerciseMaxesTable, exercisesTable, userProfilesTable } from "@workspace/db";
 import { GetDashboardSummaryResponse, GetWeightProgressResponse, GetRecommendationsResponse } from "@workspace/api-zod";
 import { recommendationsTable } from "@workspace/db";
+import { openai } from "@workspace/integrations-openai-ai-server";
+import { aiRateLimit } from "../middlewares/aiRateLimit";
 
 const router: IRouter = Router();
 
@@ -147,9 +149,87 @@ router.get("/progress/weights", async (req, res): Promise<void> => {
   res.json(GetWeightProgressResponse.parse(result));
 });
 
-router.get("/recommendations", async (_req, res): Promise<void> => {
-  const recs = await db.select().from(recommendationsTable);
-  res.json(GetRecommendationsResponse.parse(recs));
+router.get("/recommendations", aiRateLimit, async (req, res): Promise<void> => {
+  const refresh = req.query.refresh === "true";
+
+  if (!refresh) {
+    const existing = await db.select().from(recommendationsTable);
+    if (existing.length > 0) {
+      res.json(GetRecommendationsResponse.parse(existing));
+      return;
+    }
+  }
+
+  const [profile] = await db.select().from(userProfilesTable).limit(1);
+  const [latestScan] = await db
+    .select()
+    .from(dexaScansTable)
+    .orderBy(desc(dexaScansTable.scanDate))
+    .limit(1);
+
+  const goal = profile?.fitnessGoal ?? "build_muscle";
+  const experience = profile?.experienceLevel ?? "intermediate";
+  const activities = profile?.currentActivities ?? "";
+  const daysPerWeek = profile?.daysPerWeek ?? 4;
+
+  const prompt = `You are a knowledgeable strength & conditioning coach recommending gear, supplements, and services to an athlete.
+
+Athlete profile:
+- Goal: ${goal.replace("_", " ")}
+- Experience: ${experience}
+- Training days per week: ${daysPerWeek}
+- Other activities: ${activities || "none"}
+${latestScan ? `- Most recent DEXA scan: body fat ${latestScan.bodyFatPercent ?? "unknown"}%, lean mass ${latestScan.leanMassLbs ?? "unknown"} lbs` : "- No DEXA scan on file yet"}
+
+Recommend exactly 6 real, well-known products or services that would genuinely help this athlete, spanning a mix of these categories: supplement, equipment, service, food. Prefer specific, real, widely-available products/brands over generic descriptions.
+
+Return a JSON object with this exact shape:
+{
+  "recommendations": [
+    {
+      "category": "supplement" | "equipment" | "service" | "food",
+      "title": "Product or service name",
+      "description": "1-2 sentence description of what it is",
+      "brand": "Brand name or null",
+      "relevanceReason": "1 sentence on why this specifically fits this athlete's profile"
+    }
+  ]
+}
+
+Rules:
+- Do NOT invent image URLs or affiliate links — omit those fields entirely.
+- Be specific and real (e.g. "Creatine Monohydrate" with brand "Thorne", not "a protein supplement").
+- Return ONLY valid JSON.`;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-5.6-luna",
+    messages: [{ role: "user", content: prompt }],
+    response_format: { type: "json_object" },
+  });
+
+  const aiData = JSON.parse(response.choices[0].message.content ?? "{}");
+  const items: Array<{
+    category: string;
+    title: string;
+    description: string;
+    brand?: string | null;
+    relevanceReason: string;
+  }> = Array.isArray(aiData.recommendations) ? aiData.recommendations : [];
+
+  await db.delete(recommendationsTable);
+  const inserted = items.length > 0
+    ? await db.insert(recommendationsTable).values(
+        items.map((item) => ({
+          category: item.category,
+          title: item.title,
+          description: item.description,
+          brand: item.brand ?? null,
+          relevanceReason: item.relevanceReason,
+        }))
+      ).returning()
+    : [];
+
+  res.json(GetRecommendationsResponse.parse(inserted));
 });
 
 export default router;
