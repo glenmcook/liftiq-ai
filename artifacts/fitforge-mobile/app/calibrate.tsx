@@ -144,7 +144,10 @@ export default function CalibrateScreen() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
 
-  const { data: profile, isLoading: profileLoading } = useGetProfile({}, { query: { retry: false } });
+  const { data: profile, isLoading: profileLoading, refetch: refetchProfile } = useGetProfile(
+    {},
+    { query: { retry: false } }
+  );
   const saveProfile = useSaveProfile();
   const generatePlan = useGeneratePlan();
 
@@ -152,6 +155,19 @@ export default function CalibrateScreen() {
   const [hydrated, setHydrated] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  // Safety net: if the initial profile check or diet-preferences fetch ever
+  // hangs (bad connection, stale bundle, unforeseen bug), don't leave the
+  // user staring at a spinner forever with no way out.
+  const [stalled, setStalled] = useState(false);
+
+  useEffect(() => {
+    if (hydrated) {
+      setStalled(false);
+      return;
+    }
+    const timer = setTimeout(() => setStalled(true), 7000);
+    return () => clearTimeout(timer);
+  }, [hydrated, profileLoading]);
 
   const isFirstRun = !profileLoading && !profile;
 
@@ -257,6 +273,32 @@ export default function CalibrateScreen() {
   };
 
   if (profileLoading || !hydrated) {
+    if (stalled) {
+      return (
+        <View style={[styles.centered, { backgroundColor: colors.background, paddingHorizontal: 32, gap: 16 }]}>
+          <Feather name="wifi-off" size={32} color={colors.mutedForeground} />
+          <Text style={[styles.question, { color: colors.foreground, fontSize: 17, textAlign: 'center' }]}>
+            This is taking longer than expected
+          </Text>
+          <Text style={[styles.helper, { color: colors.mutedForeground, textAlign: 'center' }]}>
+            Could be a slow connection. You can retry, or start fresh with default answers and edit them as you go.
+          </Text>
+          <Pressable
+            onPress={() => {
+              setStalled(false);
+              refetchProfile();
+            }}
+            style={[styles.submitBtn, { backgroundColor: colors.primary, width: '100%' }]}
+          >
+            <Feather name="refresh-cw" size={16} color={colors.primaryForeground} />
+            <Text style={[styles.submitText, { color: colors.primaryForeground }]}>Retry</Text>
+          </Pressable>
+          <Pressable onPress={() => setHydrated(true)} style={{ padding: 10 }}>
+            <Text style={[styles.helper, { color: colors.primary }]}>Skip — start fresh</Text>
+          </Pressable>
+        </View>
+      );
+    }
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
         <ActivityIndicator color={colors.primary} size="large" />
@@ -525,4 +567,5 @@ const styles = StyleSheet.create({
   },
   submitText: { fontSize: 15, fontFamily: 'Inter_700Bold', fontWeight: '700' as const, letterSpacing: 0.3 },
 });
+
 
