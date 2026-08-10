@@ -169,7 +169,7 @@ router.post("/plans/generate", aiRateLimit, async (req, res): Promise<void> => {
       ? `\n\nDEMONSTRATED STRENGTH (all-time logged maxes — this is real, not estimated):\n${exerciseMaxes
           .map(
             (m) =>
-              `- ${m.exercise?.name ?? "Unknown exercise"}: ${m.maxWeightLbs}lbs (achieved ${m.achievedAt.toISOString().split("T")[0]})`
+              `- ${m.exercise?.name ?? "Unknown exercise"}: ${m.max.maxWeightLbs}lbs (achieved ${m.max.achievedAt.toISOString().split("T")[0]})`
           )
           .join(
             "\n"
