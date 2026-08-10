@@ -15,4 +15,5 @@ export interface UserProfileInput {
   experienceLevel: string;
   currentActivities?: string;
   daysPerWeek: number;
+  splitPreference?: string;
 }

@@ -29,6 +29,7 @@ export const GetProfileResponse = zod.object({
   "experienceLevel": zod.string().describe('beginner, intermediate, advanced'),
   "currentActivities": zod.string().optional().describe('JSON array of current activities (e.g. swimming, running)'),
   "daysPerWeek": zod.number(),
+  "splitPreference": zod.string().optional().describe('Free-text description of desired training split, e.g. "9-day rotation: 3 heavy PPL, 3 moderate PPL, 3 light PPL"'),
   "createdAt": zod.string()
 })
 
@@ -44,7 +45,8 @@ export const SaveProfileBody = zod.object({
   "fitnessGoal": zod.string(),
   "experienceLevel": zod.string(),
   "currentActivities": zod.string().optional(),
-  "daysPerWeek": zod.number()
+  "daysPerWeek": zod.number(),
+  "splitPreference": zod.string().optional()
 })
 
 export const SaveProfileResponse = zod.object({
@@ -57,6 +59,7 @@ export const SaveProfileResponse = zod.object({
   "experienceLevel": zod.string().describe('beginner, intermediate, advanced'),
   "currentActivities": zod.string().optional().describe('JSON array of current activities (e.g. swimming, running)'),
   "daysPerWeek": zod.number(),
+  "splitPreference": zod.string().optional().describe('Free-text description of desired training split, e.g. "9-day rotation: 3 heavy PPL, 3 moderate PPL, 3 light PPL"'),
   "createdAt": zod.string()
 })
 

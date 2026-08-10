@@ -12,6 +12,7 @@ export const userProfilesTable = pgTable("user_profiles", {
   experienceLevel: text("experience_level").notNull(), // beginner, intermediate, advanced
   currentActivities: text("current_activities"), // JSON array
   daysPerWeek: integer("days_per_week").notNull().default(3),
+  splitPreference: text("split_preference"), // free-text description of desired training split (e.g. "9-day rotation: 3 heavy PPL, 3 moderate PPL, 3 light PPL")
   email: text("email"),
   pushToken: text("push_token"),
   stripeCustomerId: text("stripe_customer_id"),

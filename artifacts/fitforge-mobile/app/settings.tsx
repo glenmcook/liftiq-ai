@@ -3,6 +3,7 @@ import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from '
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
+import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import type { ThemeId } from '@/constants/colors';
 import { useAuth } from './_layout';
@@ -123,6 +124,18 @@ export default function SettingsScreen() {
             colors={colors}
           />
         ))}
+      </View>
+
+      <Text
+        style={[styles.sectionLabel, { color: colors.mutedForeground, marginTop: 24 }]}
+      >
+        TRAINING
+      </Text>
+      <Text style={[styles.helperText, { color: colors.mutedForeground }]}>
+        Update your profile and let the AI rebuild your plan from scratch — new goal, new split, whatever's changed.
+      </Text>
+      <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.card }]}>
+        <Row icon="refresh-cw" label="Recalibrate Profile & Plan" onPress={() => router.push('/calibrate')} />
       </View>
 
       <Text

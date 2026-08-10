@@ -19,5 +19,7 @@ export interface UserProfile {
   /** JSON array of current activities (e.g. swimming, running) */
   currentActivities?: string;
   daysPerWeek: number;
+  /** Free-text description of desired training split, e.g. "9-day rotation: 3 heavy PPL, 3 moderate PPL, 3 light PPL" */
+  splitPreference?: string;
   createdAt: string;
 }

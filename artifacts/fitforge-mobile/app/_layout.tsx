@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryCache, QueryClient, QueryClientProvider, MutationCache } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -11,7 +11,7 @@ import {
   Inter_700Bold,
   useFonts,
 } from '@expo-google-fonts/inter';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import {
   View,
@@ -22,7 +22,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { setBaseUrl, setAuthTokenGetter } from '@workspace/api-client-react';
+import { setBaseUrl, setAuthTokenGetter, ApiError, useGetProfile } from '@workspace/api-client-react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 // Set the base URL for the API client — Expo bundles need absolute URLs
@@ -42,8 +42,6 @@ export function useAuth() {
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
-
-const queryClient = new QueryClient();
 
 // ─── Mobile Login Screen ─────────────────────────────────────────────────────
 
@@ -189,12 +187,31 @@ function RootLayoutNav() {
       <Stack.Screen name="diet" options={{ title: 'Diet' }} />
       <Stack.Screen name="checkin" options={{ title: 'AI Check-in' }} />
       <Stack.Screen name="recommendations" options={{ title: 'Arsenal' }} />
+      <Stack.Screen
+        name="calibrate"
+        options={{ title: 'Calibrate', presentation: 'fullScreenModal' }}
+      />
     </Stack>
   );
 }
 
 function PushSetup() {
   usePushNotifications();
+  return null;
+}
+
+// Redirects to the first-run interview when no profile exists yet. Renders
+// nothing itself — sits alongside RootLayoutNav so the Stack (and therefore
+// navigation) is already mounted when the redirect fires.
+function ProfileGate() {
+  const { isLoading, error } = useGetProfile({}, { query: { retry: false } });
+
+  useEffect(() => {
+    if (!isLoading && error instanceof ApiError && error.status === 404) {
+      router.replace('/calibrate');
+    }
+  }, [isLoading, error]);
+
   return null;
 }
 
@@ -209,13 +226,58 @@ export default function RootLayout() {
   const [authChecked, setAuthChecked] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
 
-  // Check for stored auth token on startup
+  const logout = async () => {
+    await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
+    setAuthTokenGetter(null);
+    setAuthenticated(false);
+  };
+
+  // Bounce back to the login screen on any 401 — the server's token store
+  // is in-memory (see tokenStore.ts), so it's wiped on every deploy/restart.
+  // A token that was valid on disk otherwise looks fine to the app forever,
+  // producing generic "could not load X" errors on every screen instead of
+  // a clear re-login prompt.
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        queryCache: new QueryCache({
+          onError: (error) => {
+            if (error instanceof ApiError && error.status === 401) logout();
+          },
+        }),
+        mutationCache: new MutationCache({
+          onError: (error) => {
+            if (error instanceof ApiError && error.status === 401) logout();
+          },
+        }),
+      })
+  );
+
+  // Check for a stored auth token on startup, and confirm the server still
+  // considers it valid (a server restart invalidates all issued tokens —
+  // see tokenStore.ts) before trusting it and skipping the login screen.
   useEffect(() => {
-    AsyncStorage.getItem(AUTH_TOKEN_KEY).then((storedToken) => {
+    AsyncStorage.getItem(AUTH_TOKEN_KEY).then(async (storedToken) => {
       if (storedToken) {
-        // Wire the token into the API client
-        setAuthTokenGetter(() => storedToken);
-        setAuthenticated(true);
+        try {
+          const res = await fetch(`${BASE_URL}/api/auth/check`, {
+            headers: { Authorization: `Bearer ${storedToken}` },
+          });
+          const data = await res.json();
+          if (data.authenticated) {
+            setAuthTokenGetter(() => storedToken);
+            setAuthenticated(true);
+          } else {
+            await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
+          }
+        } catch {
+          // Network error while validating — fall back to trusting the
+          // stored token rather than forcing a login the user can't
+          // complete offline. The global 401 handler above still catches
+          // it once a real request goes through.
+          setAuthTokenGetter(() => storedToken);
+          setAuthenticated(true);
+        }
       }
       setAuthChecked(true);
     });
@@ -241,12 +303,6 @@ export default function RootLayout() {
     );
   }
 
-  const logout = async () => {
-    await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
-    setAuthTokenGetter(null);
-    setAuthenticated(false);
-  };
-
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
@@ -255,6 +311,7 @@ export default function RootLayout() {
             <KeyboardProvider>
               <AuthContext.Provider value={{ logout }}>
                 <PushSetup />
+                <ProfileGate />
                 <RootLayoutNav />
               </AuthContext.Provider>
             </KeyboardProvider>

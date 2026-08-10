@@ -133,10 +133,14 @@ router.post("/plans/generate", aiRateLimit, async (req, res): Promise<void> => {
     ? `Age: ${profile.age}, Gender: ${profile.gender}, Weight: ${profile.weightLbs ?? "unknown"}lbs, Goal: ${profile.fitnessGoal}, Level: ${profile.experienceLevel}, Days/week: ${profile.daysPerWeek}, Current activities: ${profile.currentActivities ?? "none"}.`
     : "No profile data available. Create a general intermediate PPL program.";
 
+  const splitPreferenceContext = profile?.splitPreference
+    ? `\n\nATHLETE'S REQUESTED SPLIT STRUCTURE (follow this precisely — it overrides the general day-count guidance below):\n"${profile.splitPreference}"\n\nIf this describes a specific number of unique training days, intensity tiers (e.g. Heavy/Moderate/Light), or a rotation that repeats independently of the calendar week, build the "days" array to match it exactly — including the day count and labels. Days/week above is how often the athlete trains per week, not how many unique days are in the rotation; a rotation can and often should have more unique days than daysPerWeek (e.g. a 9-day rotation trained ~6 days/week, cycling continuously rather than resetting every Monday).`
+    : "";
+
   try {
     const completion = await openai.chat.completions.create({
       model: "gpt-5.6-luna",
-      max_completion_tokens: 3000,
+      max_completion_tokens: 8000,
       messages: [
         {
           role: "system",
@@ -147,7 +151,7 @@ router.post("/plans/generate", aiRateLimit, async (req, res): Promise<void> => {
           content: `Generate a personalized Push/Pull/Legs workout plan for this specific athlete:
 
 ATHLETE PROFILE:
-${profileContext}
+${profileContext}${splitPreferenceContext}
 
 IMPORTANT — read the athlete profile carefully before choosing exercises:
 - Select exercises that complement their current activities (e.g. if they swim, emphasize pulling strength and shoulder mobility; if they run, consider hip stability and single-leg work)
@@ -155,7 +159,7 @@ IMPORTANT — read the athlete profile carefully before choosing exercises:
 - Adjust volume and intensity to their goal (fat loss = higher reps, shorter rest; muscle gain = heavier, lower reps; athletic performance = mix of power and hypertrophy)
 - Do NOT default to a generic template — the exercise selection, rep schemes, and weights must reflect THIS person's profile
 
-The plan should run ${profile?.daysPerWeek ?? 6} days. Use a PPL split. Label days simply as Pull/Push/Legs unless you have a specific training reason to differentiate intensity (e.g. the athlete trains 6 days and needs a deload day, or their goal explicitly benefits from undulating periodization). Do NOT add Heavy/Light/Volume labels just to fill slots — only use them if they genuinely serve this athlete's program.
+Use a PPL split. If the athlete gave a requested split structure above, follow it exactly — day count, intensity tiers, and labels included. Otherwise, default to a rotation spanning ${profile?.daysPerWeek ?? 6} unique days, labeled simply as Pull/Push/Legs unless you have a specific training reason to differentiate intensity (e.g. the athlete trains at high frequency and benefits from undulating periodization). Do NOT add Heavy/Moderate/Light labels just to fill slots when no preference was given — only use them if they genuinely serve this athlete's program or were explicitly requested. dayNumber values must be sequential starting at 1 and represent position in the rotation, not a calendar weekday — the rotation repeats continuously regardless of length.
 
 Return ONLY this exact JSON structure, no markdown, no explanation:
 {
