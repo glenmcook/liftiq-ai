@@ -11,7 +11,7 @@ import {
   Inter_700Bold,
   useFonts,
 } from '@expo-google-fonts/inter';
-import { router, Stack } from 'expo-router';
+import { router, Stack, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import {
   View,
@@ -204,13 +204,32 @@ function PushSetup() {
 // nothing itself — sits alongside RootLayoutNav so the Stack (and therefore
 // navigation) is already mounted when the redirect fires.
 function ProfileGate() {
-  const { isLoading, error } = useGetProfile({}, { query: { retry: false } });
+  const pathname = usePathname();
+  // This is a one-time gate check, not a live-reactive query — without
+  // disabling the refetch triggers, react-query re-runs it on window focus /
+  // reconnect / remount, and each 404 (expected the whole time the user is
+  // still filling out Calibrate) re-fires the effect below. Combined with
+  // router.replace() to the route the user is already on, that was resetting
+  // the wizard back to step 1 mid-fill — reported as "keeps cycling".
+  const { isLoading, error } = useGetProfile(
+    {},
+    {
+      query: {
+        retry: false,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+        staleTime: Infinity,
+      },
+    }
+  );
 
   useEffect(() => {
+    if (pathname === '/calibrate') return;
     if (!isLoading && error instanceof ApiError && error.status === 404) {
       router.replace('/calibrate');
     }
-  }, [isLoading, error]);
+  }, [isLoading, error, pathname]);
 
   return null;
 }
