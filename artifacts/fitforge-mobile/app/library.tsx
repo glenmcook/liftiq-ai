@@ -24,6 +24,15 @@ function getWatchUrl(url: string): string {
   return url;
 }
 
+// Only ~18 exercises have a curated videoUrl (a hardcoded map on the
+// server from the original template) — the AI generates exercise names
+// far beyond that set. Falling back to a YouTube search keeps a working
+// video link available for every exercise instead of silently hiding it.
+function getVideoLinkUrl(exercise: { name: string; videoUrl?: string | null }): string {
+  if (exercise.videoUrl) return getWatchUrl(exercise.videoUrl);
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${exercise.name} exercise form tutorial`)}`;
+}
+
 export default function LibraryScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -130,11 +139,7 @@ export default function LibraryScreen() {
                   ) : null}
                 </View>
               </View>
-              <Feather
-                name={ex.videoUrl ? 'play-circle' : 'chevron-right'}
-                size={20}
-                color={ex.videoUrl ? colors.primary : colors.mutedForeground}
-              />
+              <Feather name="play-circle" size={20} color={colors.primary} />
             </Pressable>
           ))
         )}
@@ -167,15 +172,17 @@ export default function LibraryScreen() {
                 <Text style={[styles.modalDesc, { color: colors.mutedForeground }]}>{selected.instructions}</Text>
               ) : null}
             </ScrollView>
-            {selected?.videoUrl ? (
+            {selected && (
               <Pressable
-                onPress={() => Linking.openURL(getWatchUrl(selected.videoUrl))}
+                onPress={() => Linking.openURL(getVideoLinkUrl(selected))}
                 style={[styles.watchBtn, { backgroundColor: colors.primary }]}
               >
                 <Feather name="play-circle" size={18} color={colors.primaryForeground} />
-                <Text style={[styles.watchBtnText, { color: colors.primaryForeground }]}>Watch Tutorial</Text>
+                <Text style={[styles.watchBtnText, { color: colors.primaryForeground }]}>
+                  {selected.videoUrl ? 'Watch Tutorial' : 'Search Tutorial'}
+                </Text>
               </Pressable>
-            ) : null}
+            )}
           </View>
         </View>
       </Modal>
