@@ -292,10 +292,14 @@ export default function CalibrateScreen() {
         placeholderTextColor={colors.mutedForeground}
       />
       <FieldLabel colors={colors}>Other Activities (optional)</FieldLabel>
+      <Text style={[styles.helperText, { color: colors.mutedForeground }]}>
+        Include volume/frequency if it's relevant — the AI reads this closely (e.g. "run 5 miles
+        daily" changes the plan more than just "running").
+      </Text>
       <TextInput
         value={form.currentActivities}
         onChangeText={(v) => patch({ currentActivities: v })}
-        placeholder="e.g. running, swimming, jiu-jitsu"
+        placeholder="e.g. run 5 miles daily, swim 1000 yards daily, jiu-jitsu 2x/week"
         multiline
         style={[
           styles.textarea,
@@ -303,15 +307,17 @@ export default function CalibrateScreen() {
         ]}
         placeholderTextColor={colors.mutedForeground}
       />
-      <FieldLabel colors={colors}>Training Split Preference (optional)</FieldLabel>
+      <FieldLabel colors={colors}>Schedule & Anything Else (optional)</FieldLabel>
       <Text style={[styles.helperText, { color: colors.mutedForeground }]}>
-        Describe exactly the split you want and the AI will build it — day count, PPL structure,
-        intensity tiers, anything. Leave blank to let the AI decide.
+        You don't need to specify exact tiers or day counts — just tell the AI your real
+        situation (e.g. "I don't take rest days," "trying to lose belly fat," "bad knees") and
+        it'll design the rotation and intensity structure to fit. Give it an exact split only if
+        you already know what you want.
       </Text>
       <TextInput
         value={form.splitPreference}
         onChangeText={(v) => patch({ splitPreference: v })}
-        placeholder="e.g. 9-day rotation: 3 days heavy PPL, 3 days moderate PPL, 3 days light PPL"
+        placeholder="e.g. I don't take rest days and want to lose belly fat — or be specific: 9-day rotation, 3 heavy PPL / 3 moderate PPL / 3 light PPL"
         multiline
         style={[
           styles.textarea,
