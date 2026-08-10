@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -39,6 +40,15 @@ interface LogEntry {
   reps: string;
   weight: string;
   done: boolean;
+}
+
+// Same normalization as library.tsx's getWatchUrl — embed URLs open fine in
+// a webview but not always via the OS-level Linking.openURL, so route
+// through the watch page instead.
+function getWatchUrl(url: string): string {
+  const embedMatch = url.match(/youtube\.com\/embed\/([\w-]+)/);
+  if (embedMatch) return `https://www.youtube.com/watch?v=${embedMatch[1]}`;
+  return url;
 }
 
 function RestTimerBar({
@@ -403,6 +413,10 @@ export default function SessionScreen() {
             {group.exercises.map((ex) => {
               const swapped = swaps[ex.exerciseId];
               const effective = swapped ?? ex.exercise;
+              // SwappedExercise doesn't carry a video URL, so only show the
+              // original exercise's tutorial when it hasn't been swapped —
+              // showing the old video for a swapped-in exercise would be wrong.
+              const videoUrl = swapped ? undefined : ex.exercise.videoUrl;
               return (
               <View
                 key={ex.id}
@@ -434,6 +448,15 @@ export default function SessionScreen() {
                       </Text>
                     </View>
                     <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                      {videoUrl && (
+                        <Pressable
+                          onPress={() => Linking.openURL(getWatchUrl(videoUrl))}
+                          hitSlop={8}
+                          style={[styles.playBtn, { backgroundColor: colors.primary }]}
+                        >
+                          <Feather name="play" size={14} color={colors.primaryForeground} />
+                        </Pressable>
+                      )}
                       <View
                         style={[
                           styles.muscleBadge,
@@ -929,6 +952,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     fontWeight: '600' as const,
     letterSpacing: 0.3,
+  },
+  playBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   muscleBadge: {
     paddingHorizontal: 7,
