@@ -12,7 +12,8 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { router, useLocalSearchParams, useNavigation } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import {
   useCreateSession,
@@ -115,6 +116,22 @@ function RestTimerBar({
 export default function SessionScreen() {
   const { dayId } = useLocalSearchParams<{ dayId: string }>();
   const colors = useColors();
+  const insets = useSafeAreaInsets();
+
+  // headerShown is false for this screen (see _layout.tsx) so this is the
+  // only way in or out — without it there is no way back to the tabs.
+  const backButton = (
+    <Pressable
+      onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
+      hitSlop={10}
+      style={[
+        styles.backBtn,
+        { top: insets.top + 10, backgroundColor: colors.card, borderColor: colors.border },
+      ]}
+    >
+      <Feather name="chevron-left" size={22} color={colors.foreground} />
+    </Pressable>
+  );
 
   const { day, isLoading, isError, isOffline } = useOfflineWorkoutDay(
     parseInt(dayId ?? '0')
@@ -285,6 +302,7 @@ export default function SessionScreen() {
   if (isLoading) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
+        {backButton}
         <ActivityIndicator color={colors.primary} size="large" />
       </View>
     );
@@ -293,6 +311,7 @@ export default function SessionScreen() {
   if (isError || !day) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
+        {backButton}
         <Feather name="alert-circle" size={36} color={colors.mutedForeground} />
         <Text style={[styles.errorText, { color: colors.mutedForeground }]}>
           Could not load workout
@@ -312,11 +331,15 @@ export default function SessionScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {backButton}
       {isOffline && <OfflineBanner />}
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: Platform.OS === 'web' ? 100 : 120 },
+          {
+            paddingTop: insets.top + 52,
+            paddingBottom: Platform.OS === 'web' ? 100 : 120,
+          },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -743,6 +766,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
+  },
+  backBtn: {
+    position: 'absolute',
+    left: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 20,
   },
   timerBar: {
     borderWidth: 1,
