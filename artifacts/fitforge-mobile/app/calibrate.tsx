@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { router } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useColors } from '@/hooks/useColors';
@@ -559,7 +560,12 @@ export default function CalibrateScreen() {
         <View style={{ marginTop: 20 }}>{renderStepBody()}</View>
       </ScrollView>
 
-      <View style={[styles.bottomBar, { borderTopColor: colors.border, paddingBottom: insets.bottom + 16 }]}>
+      <KeyboardStickyView
+        style={[
+          styles.bottomBar,
+          { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: insets.bottom + 16 },
+        ]}
+      >
         {isLastStep ? (
           <Pressable
             onPress={handleSubmit}
@@ -583,7 +589,7 @@ export default function CalibrateScreen() {
             <Feather name="chevron-right" size={18} color={colors.primaryForeground} />
           </Pressable>
         )}
-      </View>
+      </KeyboardStickyView>
     </View>
   );
 }
