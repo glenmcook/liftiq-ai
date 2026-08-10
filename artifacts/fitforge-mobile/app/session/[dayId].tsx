@@ -338,7 +338,10 @@ export default function SessionScreen() {
           styles.content,
           {
             paddingTop: insets.top + 52,
-            paddingBottom: Platform.OS === 'web' ? 100 : 120,
+            // The rest timer bar renders inside the fixed bottomBar (see
+            // below) and grows its height — without accounting for that
+            // here, the last set row(s) end up hidden underneath it.
+            paddingBottom: (Platform.OS === 'web' ? 100 : 120) + (restTimer ? 110 : 0),
           },
         ]}
         showsVerticalScrollIndicator={false}
