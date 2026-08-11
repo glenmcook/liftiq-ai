@@ -33,6 +33,18 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "07f0ffde-5007-464c-aa34-a8f495106861"
+      }
+    },
+    "owner": "glencook13",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/07f0ffde-5007-464c-aa34-a8f495106861"
     }
   }
 }
